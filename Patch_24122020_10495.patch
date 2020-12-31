@@ -1,0 +1,37 @@
+Index: webContent/jsp/setAutoBatchInput.jsp
+===================================================================
+--- webContent/jsp/setAutoBatchInput.jsp	(revision 10494)
++++ webContent/jsp/setAutoBatchInput.jsp	(revision 10495)
+@@ -3,6 +3,7 @@
+ <% response.setHeader("Cache-Control","no-store");%> 
+ <% response.setDateHeader("Expires",-1);%>
+ 
++<%@page import="java.lang.*"%>
+ <%@page import="com.greenlight.xplatformadapter.framework.messagebundle.I18nUtil"%>
+ <%@page import="com.greenlight.xplatformadapter.framework.messagebundle.MessagesBundle"%>
+ <%@page import="com.greenlight.xplatformadapter.utils.XAppConstants"%>
+@@ -207,10 +208,15 @@
+ 											</td>
+ 											<td>
+ 												<% 
++												int maxlength=300;
++												if("To".equalsIgnoreCase(inputRow.getFieldDisplayName().trim())){
++													maxlength=1000;
++												}
++												//out.println(inputRow.getFieldDisplayName().trim());
+ 												if (!inputRow.getFieldType().trim().equalsIgnoreCase("Calendar"))													
+ 												{ 
+ 												%>
+-												<input <%=viewReadOnly%> type="text" role="textbox" autocomplete="on"  aria-label="<%=fieldId%>" maxlength="300" style="color:#707070; font-size: 8pt" name="<%=fieldId%>" id="<%=fieldId%>" value="<%=inputRow.getFieldValue() %>">
++												<input <%=viewReadOnly%> type="text" role="textbox" autocomplete="on"  aria-label="<%=fieldId%>" maxlength="<%=maxlength%>" style="color:#707070; font-size: 8pt" name="<%=fieldId%>" id="<%=fieldId%>" value="<%=inputRow.getFieldValue() %>">
+ 												<% } else { 
+ 												%>												
+ 													<input  readonly="true" name="<%=fieldId%>" aria-label="<%=fieldId%>" maxlength="50" style="color:#707070; font-size: 8pt" type="text" role="textbox" autocomplete="on"  value="<%=inputRow.getFieldValue()%>" />
+@@ -226,7 +232,6 @@
+ 															
+ 									</tr>
+ 						<%
+-						
+ 									}	// End of for	
+ 						%>					
+ 			  					</TABLE>

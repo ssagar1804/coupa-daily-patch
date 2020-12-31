@@ -1,0 +1,301 @@
+Index: source/rtads_application.properties
+===================================================================
+--- source/rtads_application.properties	(revision 10493)
++++ source/rtads_application.properties	(revision 10494)
+@@ -847,4 +847,7 @@
+ LDAP.USERATTRIBUTE.CREATE.TIMESTAMP=whenCreated
+ LDAP.INSERT.TABLE=GLT_XPA_GEN_TAB17
+ LDAP.LATEST.MODIFY.TIMESTAMP=SELECT DISTINCT USER_DEF_05 FROM GLT_XPA_GEN_TAB17 WHERE  UPDATE_DATETIME =  (SELECT MAX (UPDATE_DATETIME) FROM GLT_XPA_GEN_TAB17 WHERE USER_DEF_05 IS NOT NULL)
+-LDAP.LATEST.MODIFY.COLUMN.NAME=USER_DEF_05
+\ No newline at end of file
++LDAP.LATEST.MODIFY.COLUMN.NAME=USER_DEF_05
++
++
++sys.param.username.comparision.field=USER_ID_DERIVED
+Index: source/com/greenlight/xplatformadapter/utils/XAppConstants.java
+===================================================================
+--- source/com/greenlight/xplatformadapter/utils/XAppConstants.java	(revision 10493)
++++ source/com/greenlight/xplatformadapter/utils/XAppConstants.java	(revision 10494)
+@@ -1098,4 +1098,11 @@
+ 	public static final String SYS_PARAM_CREATE_SUPERVISOR = "CREATE_SUPERVISOR";
+ 	public static final String LDAP_ATTRIBUTE_FIELD_MAPPING = "ldap.attribute.field.mapping";
+ 	public static final String GET_EXCLUDE_USER_QUERY = "exclude.users.from.changevector.query";
++	
++	public static final String DELETE_SF_LOGS_LIMIT = "DELETE_SF_LOGS_LIMIT";
++	
++	public static final String SETUP_AUDIT_TRAIL ="SETUP_AUDIT_TRAIL";
++	public static final String USER_DEBUG_LOG="USER_DEBUG_LOG";
++	
++	public static final String SYSTEM_PARAM_USERNAME_FILTER_FOR_SEGREGATION_OF_LOGS = "sys.param.username.comparision.field";
+ }
+Index: source/com/greenlight/xplatformadapter/utils/ResQIntegrationUtility.java
+===================================================================
+--- source/com/greenlight/xplatformadapter/utils/ResQIntegrationUtility.java	(revision 10493)
++++ source/com/greenlight/xplatformadapter/utils/ResQIntegrationUtility.java	(revision 10494)
+@@ -621,9 +621,9 @@
+ 						_logger.debug("Filter added to list");
+ 						AuditLogDataFilter logDataFilter = new AuditLogDataFilter();
+ 						logDataFilter.setUserName(rs.getString("USRNAME"));
+-						if (!XAppUtils.isBlankOrNull(client) && SFConstants.BAT.equalsIgnoreCase(client)) {
+-							logDataFilter.setUserName(rs.getString("USER_ID"));
+-						}
++					//	if (!XAppUtils.isBlankOrNull(client) && SFConstants.BAT.equalsIgnoreCase(client)) {
++						//	logDataFilter.setUserName(rs.getString("USER_ID"));
++					//	}
+ 						logDataFilter.setFullName(XAppUtils.getNullablePlainString((XAppUtils.getNullablePlainString(rs.getString("FIRST_NAME")) + XAppConstants.SPACE + XAppUtils.getNullablePlainString(rs.getString("LAST_NAME")))));
+ 						logDataFilter.setFirstName(XAppUtils.getNullablePlainString(rs.getString("FIRST_NAME")));
+ 						logDataFilter.setLastName(XAppUtils.getNullablePlainString(rs.getString("LAST_NAME")));
+Index: source/com/greenlight/xplatformadapter/dao/SystemDAO.java
+===================================================================
+--- source/com/greenlight/xplatformadapter/dao/SystemDAO.java	(revision 10493)
++++ source/com/greenlight/xplatformadapter/dao/SystemDAO.java	(revision 10494)
+@@ -2130,4 +2130,30 @@
+ 		}
+ 		return isFileBased;
+ 	}
++	
++	public static String fetchHexIdsFromUserName(String userName, String systemId) {
++
++		PreparedStatement stmt = null;
++		String query = "SELECT ID FROM GLT_SF_USER WHERE USERNAME=? AND SYSTEMID=?";
++		XAppConnection xAppConnection = null;
++		ResultSet rs = null;
++
++		try {
++			xAppConnection = XAppDBConnectionManager.getInstance().getConnection();
++			stmt = xAppConnection.prepareStatement(query);
++			stmt.setString(1, userName);
++			stmt.setString(2, systemId);
++			rs = stmt.executeQuery();
++
++			while (rs.next()) {
++				return rs.getString("ID");
++			}
++
++		} catch (Exception e) {
++			XAppUtils.sop(e);
++		} finally {
++			com.greenlight.xplatformadapter.utils.XAppUtils.closeOpenCursors(rs, null, stmt, xAppConnection);
++		}
++		return null;
++	}
+ } // end of class
+Index: source/com/greenlight/rta10/executionpoints/impl/RTA10SFORCEImpl.java
+===================================================================
+--- source/com/greenlight/rta10/executionpoints/impl/RTA10SFORCEImpl.java	(revision 10493)
++++ source/com/greenlight/rta10/executionpoints/impl/RTA10SFORCEImpl.java	(revision 10494)
+@@ -9,15 +9,20 @@
+ import java.util.ArrayList;
+ import java.util.Arrays;
+ import java.util.HashMap;
++import java.util.HashSet;
+ import java.util.Iterator;
+ import java.util.List;
+ import java.util.Locale;
+ import java.util.Map;
+ import java.util.Map.Entry;
++import java.util.Set;
+ import java.util.TimeZone;
+ import java.util.TreeMap;
+ 
++import org.apache.commons.collections.CollectionUtils;
++import org.apache.commons.collections.MapUtils;
+ import org.apache.commons.lang.StringEscapeUtils;
++import org.apache.commons.lang3.StringUtils;
+ import org.joda.time.DateTime;
+ import org.joda.time.DateTimeZone;
+ import org.joda.time.format.DateTimeFormat;
+@@ -118,6 +123,7 @@
+ import com.greenlight.xplatformadapter.logs.RTADSLoggerFactory;
+ import com.greenlight.xplatformadapter.utils.SFConstants;
+ import com.greenlight.xplatformadapter.utils.XAppConstants;
++import com.greenlight.xplatformadapter.utils.XAppListener;
+ import com.greenlight.xplatformadapter.utils.XAppUtils;
+ 
+ public class RTA10SFORCEImpl implements RTA10APIInterface, RTA10EmergencyAccessAPIInterface {
+@@ -739,6 +745,21 @@
+ 						RTA10APIConstants.RTA10_GETUSERACTIVITY, null));
+ 				AuditLogDataFilter[] auditLogDataFilters = genericApi.getAuditLogDataFilters(userActivityFilter,
+ 						this.systemId);
++				
++				Map userNameHexIdsMap = getUserNameHexIdsMap(auditLogDataFilters);
++				StringBuilder sb = new StringBuilder();
++				Set hexIdsOfUsers = new HashSet();
++				if (MapUtils.isNotEmpty(userNameHexIdsMap)) {
++					hexIdsOfUsers = userNameHexIdsMap.keySet();
++					String comma = "";
++					for (Iterator iterator = hexIdsOfUsers.iterator(); iterator.hasNext();) {
++						sb.append(comma);
++						sb.append("'").append(iterator.next()).append("'");
++						comma = ",";
++					}
++				}
++				String hexIdsCommaSeparatedForQuery = sb.toString();
++				
+ 
+ 				List logs = new ArrayList();
+ 				ConnectionObjInterface connectionObj = (ConnectionObjInterface) GenericConnectionPool
+@@ -758,6 +779,9 @@
+ 								String[] uaFileNames = auditLogDataQuery.getQuery().split(
+ 										XAppConstants.COLON + XAppConstants.COLON);
+ 								Map entities = genericApi.getEntities(xpaProgram);
++								String targetParamForSeparation = XAppListener.getApplicationProperties().getProperty(
++										XAppConstants.SYSTEM_PARAM_USERNAME_FILTER_FOR_SEGREGATION_OF_LOGS);
++								
+ 								for (int i = 0; i < uaFileNames.length; i++) {
+ 									_logger.debug("uaFileNames=" + uaFileNames[i]);
+ 									List subLogs = new ArrayList();// per file
+@@ -774,14 +798,16 @@
+ 										TableXPAProgParam tableXPAProgParam = (TableXPAProgParam) progParams.get(0);
+ 										SimpleDateFormat dt = new SimpleDateFormat(tableXPAProgParam.getUserDef04());
+ 										dt.setTimeZone(TimeZone.getTimeZone(tableXPAProgParam.getParamHighValue()));
++										// userdef03=length
++										String filenameAttr = tableXPAProgParam.getUserDef01();
+ 										String uaQuery = tableXPAProgParam
+ 												.getUserDef03()
+ 												.replaceFirst(XAppConstants.PLACEHOLDER,
+ 														dt.format(userActivityFilter.getFromDate().getTime()))
+ 												.replaceFirst(XAppConstants.PLACEHOLDER,
+-														dt.format(userActivityFilter.getToDate().getTime()));
+-										// userdef03=length
+-										String filenameAttr = tableXPAProgParam.getUserDef01();// userdef01=format
++														dt.format(userActivityFilter.getToDate().getTime()))
++												.replaceFirst(XAppConstants.PLACEHOLDER, hexIdsCommaSeparatedForQuery);
++										// userdef01=format
+ 										List sforcedata = SForceUtils.getSFQueryData(XAppUtils
+ 												.getApplicationProperty(XAppConstants.PROPERTY_SF_ENTITY_USERACTIVITY),
+ 												uaQuery, connector);
+@@ -799,15 +825,23 @@
+ 												_logger.debug("file=" + uaFileNames[i] + ", encodedData=" + encodedData);
+ 												CSVReader reader = new CSVReader(new StringReader(new String(
+ 														new BASE64Decoder().decodeBuffer(encodedData))));
++												Integer userIdDerivedIndex = null;
+ 												while ((nextLine = reader.readNext()) != null) {
+ 													if (j == 0) {
+ 														headerRow = Arrays.asList(nextLine);
+ 														j++;
++														userIdDerivedIndex = headerRow
++																.indexOf(targetParamForSeparation);
+ 													} else {
+ 														dataRow = Arrays.asList(nextLine);
+ 													}
+-													if (dataRow != null && dataRow.size() > 0 && headerRow != null
+-															&& headerRow.size() > 0) {
++													if (CollectionUtils.isNotEmpty(dataRow)
++															&& CollectionUtils.isNotEmpty(headerRow)
++															&& userIdDerivedIndex != null
++															&& dataRow.get(userIdDerivedIndex) != null
++															&& dataRow.size() >= userIdDerivedIndex
++															&& hexIdsOfUsers
++																	.contains(dataRow.get(userIdDerivedIndex))) {
+ 														AuditLogData logData = new AuditLogData();
+ 														clobData = XAppUtils.buildCsv(headerRow, dataRow,
+ 																progParamNames);
+@@ -838,10 +872,10 @@
+ 						return retVal;
+ 					}
+ 				}
+-				updateUsername(logs, connector);
++				updateUsername(logs, userNameHexIdsMap);
+ 				List auditLogDatasFilteredList = genericApi.filterAuditLogData(auditLogDataFilters, logs, xpaProgram,
+ 						null, null);
+-				if (auditLogDatasFilteredList != null && auditLogDatasFilteredList.size() > 0) {
++				if (CollectionUtils.isNotEmpty(auditLogDatasFilteredList)) {
+ 					AuditLogData[] auditLogDatas = (AuditLogData[]) auditLogDatasFilteredList
+ 							.toArray(new AuditLogData[0]);
+ 					List logIds = new ArrayList();
+@@ -874,10 +908,11 @@
+ 					}
+ 					genericApi.insertAuditLogData(auditLogDatas, xpaProgram, userActivityFilter.getAdditionalInputs());
+ 
+-					if (logIds != null && logIds.size() > 0) {
+-						_logger.debug("Deleting read user debug logs::ids::" + logIds);
+-						SForceUtils.deleteSFData((String[]) logIds.toArray(new String[0]), connector);
+-					}
++//					if (logIds != null && logIds.size() > 0) {
++//						_logger.debug("Deleting read user debug logs::ids::" + logIds);
++//						SForceUtils.deleteSFData((String[]) logIds.toArray(new String[0]), connector);
++//					}
++					clearOlderSFData(logIds, this.systemId, connector);
+ 					retVal[0] = Boolean.TRUE;
+ 				} else {
+ 					String msg = "No log data fetched";
+@@ -896,29 +931,62 @@
+ 		return retVal;
+ 	}
+ 
+-	private void updateUsername(List logs, TableXPAConnectors connector) {
++	private void updateUsername(List logs, Map<String, String> usernameMapping) {
+ 		_logger.debug("Start::updateUsername");
+-		if (logs != null && logs.size() > 0) {
+-			Map usernameMapping = new HashMap();
++		if (CollectionUtils.isNotEmpty(logs)) {
+ 			for (int i = 0; i < logs.size(); i++) {
+ 				AuditLogData data = (AuditLogData) logs.get(i);
+-				String username = (String) usernameMapping.get(data.getUserName());
+-				if (XAppUtils.isBlankOrNull(username)) {
+-					username = (String) SForceUtils.getUserName(data.getUserName(), connector);
+-					if (!XAppUtils.isBlankOrNull(username)) {
+-						try {
+-							username = username.substring(0, username.lastIndexOf(XAppConstants.AT));
+-						} catch (java.lang.Exception e) {
+-							_logger.debug(e);
+-						}
+-					}
+-					usernameMapping.put(data.getUserName(), username);
++				String userNameFromAuditLog = data.getUserName();
++				String usernameFromDB = usernameMapping.get(userNameFromAuditLog);
++
++				_logger.debug("data.getUserName()::" + userNameFromAuditLog + "::username::");
++				if (StringUtils.isNotBlank(usernameFromDB)) {
++					data.setUserName(usernameFromDB);
+ 				}
+-				_logger.debug("data.getUserName()::" + data.getUserName() + "::username::" + username);
+-				data.setUserName(username);
+ 			}
+ 		}
+ 		_logger.debug("End::updateUsername");
+ 	}
++	
++	public void clearOlderSFData(List<Integer> logIds, String systemId, TableXPAConnectors connector) {
++		if (CollectionUtils.isNotEmpty(logIds)) {
++			_logger.debug("Deleting read user debug logs::ids::" + logIds);
++			String limit = SystemDAO.getSystemParamValue(XAppConstants.DELETE_SF_LOGS_LIMIT, systemId);
++
++			int chunk = 200;
++			if (StringUtils.isNoneBlank(limit)) {
++				chunk = Integer.parseInt(limit);
++			}
++
++			if (chunk != 0) {
++				for (int i = 0; i < logIds.size(); i += chunk) {
++					List<Integer> logIdsDividedInChunk = logIds.subList(i, Math.min(logIds.size(), i + chunk));
++					_logger.info("logIds that are need to be deleted =={}"+logIdsDividedInChunk);
++					/*
++					 * try { SForceUtils.deleteSFData(logIdsDividedInChunk.toArray(new String[0]),
++					 * connector); } catch (XMLStreamException | IOException e) {
++					 * _logger.error("Exception while deleting SF data --", e); }
++					 */
++				}
++			}
++		}
++	}
++	
++	private Map<String, String> getUserNameHexIdsMap(AuditLogDataFilter[] auditLogDataFilters) {
++		Map userNameHexMap = new HashMap();
++		if (auditLogDataFilters != null) {
++			for (int i = 0; i < auditLogDataFilters.length; i++) {
++				AuditLogDataFilter auditLogDataFilterObj = auditLogDataFilters[i];
++				String fetchHexIdsFromUserName = SystemDAO.fetchHexIdsFromUserName(auditLogDataFilterObj.getUserName(),
++						this.systemId);
++				if (StringUtils.isNotBlank(fetchHexIdsFromUserName)) {
++					userNameHexMap.put(fetchHexIdsFromUserName, auditLogDataFilterObj.getUserName());
++				} else {
++					_logger.info("No hex id found for the username in DB::" + auditLogDataFilterObj.getUserName());
++				}
++			}
++		}
++		return userNameHexMap;
++	}
+ 
+ }

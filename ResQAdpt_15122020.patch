@@ -1,0 +1,230 @@
+Index: .classpath
+===================================================================
+--- .classpath	(revision 0)
++++ .classpath	(revision 0)
+@@ -0,0 +1,15 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<classpath>
++	<classpathentry kind="src" output="webContent/WEB-INF/classes" path="source"/>
++	<classpathentry exported="true" kind="con" path="org.eclipse.jst.server.core.container/org.eclipse.jst.server.tomcat.runtimeTarget/Apache Tomcat v8.5">
++		<attributes>
++			<attribute name="owner.project.facets" value="jst.web"/>
++		</attributes>
++	</classpathentry>
++	<classpathentry exported="true" kind="con" path="org.eclipse.jst.j2ee.internal.web.container"/>
++	<classpathentry exported="true" kind="con" path="org.eclipse.jst.j2ee.internal.module.container"/>
++	<classpathentry exported="true" kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
++	<classpathentry exported="true" kind="lib" path="/home/sagar/software/jar_files/mailapi-2.0.0.jar"/>
++	<classpathentry exported="true" kind="lib" path="/home/sagar/software/jar_files/jakarta.activation-2.0.0.jar"/>
++	<classpathentry kind="output" path="webContent/WEB-INF/classes"/>
++</classpath>
+Index: .project
+===================================================================
+--- .project	(revision 0)
++++ .project	(revision 0)
+@@ -0,0 +1,31 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<projectDescription>
++	<name>ResQAdpt</name>
++	<comment></comment>
++	<projects>
++	</projects>
++	<buildSpec>
++		<buildCommand>
++			<name>org.eclipse.wst.common.project.facet.core.builder</name>
++			<arguments>
++			</arguments>
++		</buildCommand>
++		<buildCommand>
++			<name>org.eclipse.jdt.core.javabuilder</name>
++			<arguments>
++			</arguments>
++		</buildCommand>
++		<buildCommand>
++			<name>org.eclipse.wst.validation.validationbuilder</name>
++			<arguments>
++			</arguments>
++		</buildCommand>
++	</buildSpec>
++	<natures>
++		<nature>org.eclipse.jem.workbench.JavaEMFNature</nature>
++		<nature>org.eclipse.wst.common.modulecore.ModuleCoreNature</nature>
++		<nature>org.eclipse.jdt.core.javanature</nature>
++		<nature>org.eclipse.wst.common.project.facet.core.nature</nature>
++		<nature>org.eclipse.wst.jsdt.core.jsNature</nature>
++	</natures>
++</projectDescription>
+Index: .settings/.jsdtscope
+===================================================================
+--- .settings/.jsdtscope	(revision 0)
++++ .settings/.jsdtscope	(revision 0)
+@@ -0,0 +1,12 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<classpath>
++	<classpathentry excluding="**/bower_components/*|**/node_modules/*|**/*.min.js" kind="src" path="WebContent"/>
++	<classpathentry kind="con" path="org.eclipse.wst.jsdt.launching.JRE_CONTAINER"/>
++	<classpathentry kind="con" path="org.eclipse.wst.jsdt.launching.WebProject">
++		<attributes>
++			<attribute name="hide" value="true"/>
++		</attributes>
++	</classpathentry>
++	<classpathentry kind="con" path="org.eclipse.wst.jsdt.launching.baseBrowserLibrary"/>
++	<classpathentry kind="output" path=""/>
++</classpath>
+Index: .settings/org.eclipse.jdt.core.prefs
+===================================================================
+--- .settings/org.eclipse.jdt.core.prefs	(revision 0)
++++ .settings/org.eclipse.jdt.core.prefs	(revision 0)
+@@ -0,0 +1,15 @@
++eclipse.preferences.version=1
++org.eclipse.jdt.core.compiler.codegen.inlineJsrBytecode=enabled
++org.eclipse.jdt.core.compiler.codegen.methodParameters=do not generate
++org.eclipse.jdt.core.compiler.codegen.targetPlatform=1.7
++org.eclipse.jdt.core.compiler.codegen.unusedLocal=preserve
++org.eclipse.jdt.core.compiler.compliance=1.7
++org.eclipse.jdt.core.compiler.debug.lineNumber=generate
++org.eclipse.jdt.core.compiler.debug.localVariable=generate
++org.eclipse.jdt.core.compiler.debug.sourceFile=generate
++org.eclipse.jdt.core.compiler.problem.assertIdentifier=error
++org.eclipse.jdt.core.compiler.problem.enablePreviewFeatures=disabled
++org.eclipse.jdt.core.compiler.problem.enumIdentifier=error
++org.eclipse.jdt.core.compiler.problem.reportPreviewFeatures=warning
++org.eclipse.jdt.core.compiler.release=disabled
++org.eclipse.jdt.core.compiler.source=1.7
+Index: .settings/org.eclipse.jst.j2ee.ejb.annotations.xdoclet.prefs
+===================================================================
+--- .settings/org.eclipse.jst.j2ee.ejb.annotations.xdoclet.prefs	(revision 0)
++++ .settings/org.eclipse.jst.j2ee.ejb.annotations.xdoclet.prefs	(revision 0)
+@@ -0,0 +1,5 @@
++XDOCLETBUILDERACTIVE=true
++XDOCLETHOME=
++XDOCLETUSEGLOBAL=true
++XDOCLETVERSION=1.2.1
++eclipse.preferences.version=1
+Index: .settings/org.eclipse.wst.common.component
+===================================================================
+--- .settings/org.eclipse.wst.common.component	(revision 0)
++++ .settings/org.eclipse.wst.common.component	(revision 0)
+@@ -0,0 +1,13 @@
++<?xml version="1.0" encoding="UTF-8"?><project-modules id="moduleCoreId" project-version="1.5.0">
++        
++    <wb-module deploy-name="ResQAdpt">
++        <wb-resource deploy-path="/WEB-INF/classes" source-path="/source"/>
++        <wb-resource deploy-path="/" source-path="/webContent"/>
++                
++        <property name="java-output-path" value="/ResQAdpt/bin"/>
++                
++        <property name="context-root" value="/ResQAdpt"/>
++            
++    </wb-module>
++    
++</project-modules>
+Index: .settings/org.eclipse.wst.common.project.facet.core.xml
+===================================================================
+--- .settings/org.eclipse.wst.common.project.facet.core.xml	(revision 0)
++++ .settings/org.eclipse.wst.common.project.facet.core.xml	(revision 0)
+@@ -0,0 +1,8 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<faceted-project>
++  <runtime name="Apache Tomcat v8.5"/>
++  <fixed facet="wst.jsdt.web"/>
++  <installed facet="java" version="1.8"/>
++  <installed facet="jst.web" version="2.3"/>
++  <installed facet="wst.jsdt.web" version="1.0"/>
++</faceted-project>
+Index: .settings/org.eclipse.wst.jsdt.ui.superType.container
+===================================================================
+--- .settings/org.eclipse.wst.jsdt.ui.superType.container	(revision 0)
++++ .settings/org.eclipse.wst.jsdt.ui.superType.container	(revision 0)
+@@ -0,0 +1 @@
++org.eclipse.wst.jsdt.launching.baseBrowserLibrary
+\ No newline at end of file
+Index: .settings/org.eclipse.wst.jsdt.ui.superType.name
+===================================================================
+--- .settings/org.eclipse.wst.jsdt.ui.superType.name	(revision 0)
++++ .settings/org.eclipse.wst.jsdt.ui.superType.name	(revision 0)
+@@ -0,0 +1 @@
++Window
+\ No newline at end of file
+Index: .settings/org.eclipse.wst.ws.service.policy.prefs
+===================================================================
+--- .settings/org.eclipse.wst.ws.service.policy.prefs	(revision 0)
++++ .settings/org.eclipse.wst.ws.service.policy.prefs	(revision 0)
+@@ -0,0 +1,2 @@
++eclipse.preferences.version=1
++org.eclipse.wst.ws.service.policy.projectEnabled=false
+Index: source/com/greenlight/rqAdapter/dao/resqDAO/AccessRequestDao.java
+===================================================================
+--- source/com/greenlight/rqAdapter/dao/resqDAO/AccessRequestDao.java	(revision 7155)
++++ source/com/greenlight/rqAdapter/dao/resqDAO/AccessRequestDao.java	(working copy)
+@@ -3147,7 +3147,7 @@
+ 				ceEntity="errorMessage"; 
+ 			}
+ 			
+-		  	XMLInputFactory inputFactory = XMLInputFactory.newFactory();
++		  	XMLInputFactory inputFactory = XMLInputFactory.newInstance();
+ 		  	inputFactory.setProperty(XMLInputFactory.IS_COALESCING, true);
+ 		  	XMLStreamReader reader = inputFactory.createXMLStreamReader(new ByteArrayInputStream(sfObjectXml.getBytes("UTF-8")));
+ 		  	 String returnstr="";
+@@ -3208,7 +3208,7 @@
+ 		private static String getEntryFromRequestXml(String sfObjectXml ) throws IOException, XMLStreamException {
+ 			_logger.debug("Start::getEntryFromRequestXml");
+ 			String ceEntity="modification"; 
+-		  	XMLInputFactory inputFactory = XMLInputFactory.newFactory();
++		  	XMLInputFactory inputFactory = XMLInputFactory.newInstance();
+ 		  	inputFactory.setProperty(XMLInputFactory.IS_COALESCING, true);
+ 		  	XMLStreamReader reader = inputFactory.createXMLStreamReader(new ByteArrayInputStream(sfObjectXml.getBytes("UTF-8")));
+ 		    String returnstr="";
+Index: source/config/xplatformConfig.xml
+===================================================================
+--- source/config/xplatformConfig.xml	(revision 7155)
++++ source/config/xplatformConfig.xml	(working copy)
+@@ -1,7 +1,7 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <xplatformConfg>
+ 	<user_security>
+-		<authentication>UME</authentication>
++		<authentication>Native</authentication>
+ 	</user_security>
+ 	<external_vendor>
+ 		<vendorname>SAPGRC</vendorname>
+Index: webContent/META-INF/context.xml
+===================================================================
+--- webContent/META-INF/context.xml	(revision 7155)
++++ webContent/META-INF/context.xml	(working copy)
+@@ -8,8 +8,8 @@
+ 				auth="Container"
+ 				type="javax.sql.DataSource" 
+ 				driverClassName="oracle.jdbc.OracleDriver"
+-				url="jdbc:oracle:thin:@sapsr3db.c6djbyal1avz.us-west-2.rds.amazonaws.com:1521:RCMDB"
+-				username="DEMOSFSF" 
++				url="jdbc:oracle:thin:@192.168.2.18:2020:RTA_DEV"
++				username="RQ_DEV" 
+ 				password="green123" 
+ 				initialSize="30"
+ 				maxActive="150"
+Index: webContent/WEB-INF/web.xml
+===================================================================
+--- webContent/WEB-INF/web.xml	(revision 7155)
++++ webContent/WEB-INF/web.xml	(working copy)
+@@ -12,7 +12,7 @@
+ 	<context-param>
+ 	  <param-name>datasourceJndiName</param-name>
+ 	  <!-- <param-value>jdbc/SSDSRTA</param-value> -->
+-	  <param-value>java:comp/env/SAP/BC_ADM</param-value>
++	  <param-value>java:comp/env/jdbc/RTADSDB</param-value>
+ 	 </context-param>	
+ 	
+ 	<listener>
+Index: webContent/js/commonfunctions.js
+===================================================================
+--- webContent/js/commonfunctions.js	(revision 7155)
++++ webContent/js/commonfunctions.js	(working copy)
+@@ -51,6 +51,7 @@
+ 
+  function maxLengthPaste(field,maxChars)
+  {
++ 	 console.log('Here 4');
+        event.returnValue=false;
+        if((field.value.length +  window.clipboardData.getData("Text").length) > maxChars) {
+          return false;

@@ -1,0 +1,64 @@
+Index: webContent/jsp/resqJsp/saveReview.jsp
+===================================================================
+--- webContent/jsp/resqJsp/saveReview.jsp	(revision 7163)
++++ webContent/jsp/resqJsp/saveReview.jsp	(revision 7164)
+@@ -105,7 +105,7 @@
+ 											  <TD  class="text_item_ERM_re"><%= I18nUtil.getString(USER_LOCALE, "CROSSAPP.COMMENTS") %>: <span id="manSpan" class="mandatory">*</span></TD>
+ 											  <TD >
+ 												  <span id="valideto_outer7"><span id="validefrom_outer8"><span id="valideto_outer9"><span id="validefrom_outer10">
+-														<textarea name="comments" role="textbox" aria-label="<%= I18nUtil.getString(USER_LOCALE, "CROSSAPP.COMMENTS") %>" onKeyPress='return maxLength(this,"255");' onPaste='return maxLengthPaste(this,"255");' style="width:235px;"></textarea>				
++														<textarea class="reviewTextBox" name="comments" role="textbox" aria-label="<%= I18nUtil.getString(USER_LOCALE, "CROSSAPP.COMMENTS") %>" onKeyPress='return validateMaxLength(this,255);' style="width:235px;"></textarea>				
+ 												  </span></span></span></span>
+ 											  </TD>
+ 										</TR>
+@@ -154,26 +154,39 @@
+ 		}
+ 		
+ }
+- function maxLength(field,maxChars)
+- {
+  
+-       if(field.value.length >= maxChars) {
+-          event.returnValue=false;
+-          return false;
+-       }
++ function validateMaxLength(field,maxChars){
++     if(field.value.length >= maxChars) {
++        event.returnValue=false;
++        return false;
++     }
++     return true;
+  }  
+-
+- function maxLengthPaste(field,maxChars)
++ 
++ /* function maxLengthPaste(field,maxChars)
+  {
++	   console.log('Here 3');
+        event.returnValue=false;
+-       var str = window.clipboardData.getData("Text");
++      /* var str = window.clipboardData.getData("Text");
+ 	   var res = str.substring(0, maxChars-1);
+ 	   if((field.value.length +  window.clipboardData.getData("Text").length) > maxChars) {
+        	 field.value = res; 
+          return res;
+        }
+-       event.returnValue=true;
+- }
++       event.returnValue=true; 
++ } */
++ 
++document.addEventListener('paste', function(event) {
++    let pastedData = (event.clipboardData || window.clipboardData).getData('text');
++    let reviewTextBoxData=(document.getElementsByClassName('reviewTextBox')[0]).value;
++    if((reviewTextBoxData+pastedData).length<=255){
++    	(document.getElementsByClassName('reviewTextBox')[0]).value=(reviewTextBoxData+pastedData);   	
++    }else{
++    	alert('Data exceeded max length of 255');
++    	(document.getElementsByClassName('reviewTextBox')[0]).value=reviewTextBoxData;   	
++    }
++    event.preventDefault();
++});
+ 
+ </script>
+ </html>

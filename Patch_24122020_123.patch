@@ -1,0 +1,191 @@
+Index: source/com/greenlight/rta10/executionpoints/impl/RTA10SFORCEImpl.java
+===================================================================
+--- source/com/greenlight/rta10/executionpoints/impl/RTA10SFORCEImpl.java	(revision 10501)
++++ source/com/greenlight/rta10/executionpoints/impl/RTA10SFORCEImpl.java	(revision 10502)
+@@ -1,5 +1,6 @@
+ package com.greenlight.rta10.executionpoints.impl;
+ 
++import java.io.IOException;
+ import java.io.StringReader;
+ import java.rmi.RemoteException;
+ import java.sql.PreparedStatement;
+@@ -19,6 +20,8 @@
+ import java.util.TimeZone;
+ import java.util.TreeMap;
+ 
++import javax.xml.stream.XMLStreamException;
++
+ import org.apache.commons.collections.CollectionUtils;
+ import org.apache.commons.collections.MapUtils;
+ import org.apache.commons.lang.StringEscapeUtils;
+@@ -197,8 +200,8 @@
+ 					}
+ 					if ((activeUsersIds.size() % batchSize) != 0 && userIds != null && !userIds.isEmpty()) {
+ 						_logger.debug("deactivateTerminatedUsers : last");
+-						deactivateTerminatedUsers(output, extSysId, connector, impl, userIds, provUtils,
+-								successUserIds, failedUserIds, profileId, conn);
++						deactivateTerminatedUsers(output, extSysId, connector, impl, userIds, provUtils, successUserIds,
++								failedUserIds, profileId, conn);
+ 						userIds = null;
+ 					}
+ 				} else {
+@@ -332,7 +335,8 @@
+ 		return apiUser;
+ 	}
+ 
+-	private boolean getAllActiveUsersFromDB(JDBCConnectionImpl conn, String systemId, Map activeUsers, String profileId) {
++	private boolean getAllActiveUsersFromDB(JDBCConnectionImpl conn, String systemId, Map activeUsers,
++			String profileId) {
+ 		PreparedStatement stmt = null;
+ 		ResultSet rs = null;
+ 		boolean success = true;
+@@ -464,7 +468,8 @@
+ 	}
+ 
+ 	@Override
+-	public ValidProfileRangesOutput getProfileRanges(String max_size, MapClass additionalInputs) throws RemoteException {
++	public ValidProfileRangesOutput getProfileRanges(String max_size, MapClass additionalInputs)
++			throws RemoteException {
+ 		// TODO Auto-generated method stub
+ 		return null;
+ 	}
+@@ -577,9 +582,9 @@
+ 		QueryExecutionDetails queryExecutionDetails = new QueryExecutionDetails();
+ 		try {
+ 			program.setConnectorId(connector.getConnectorId());
+-			_logger.debug(StringEscapeUtils.escapeHtml("Testing program [RTA10SFORCEImpl][programId="
+-					+ program.getProgramId() + ", connector=" + connector.getConnectorName() + ", programType="
+-					+ program.getProgramTypeString() + "]"));
++			_logger.debug(StringEscapeUtils
++					.escapeHtml("Testing program [RTA10SFORCEImpl][programId=" + program.getProgramId() + ", connector="
++							+ connector.getConnectorName() + ", programType=" + program.getProgramTypeString() + "]"));
+ 			long startTime = System.currentTimeMillis();
+ 			long endTime = System.currentTimeMillis();
+ 			List columns = new ArrayList();
+@@ -745,7 +750,7 @@
+ 						RTA10APIConstants.RTA10_GETUSERACTIVITY, null));
+ 				AuditLogDataFilter[] auditLogDataFilters = genericApi.getAuditLogDataFilters(userActivityFilter,
+ 						this.systemId);
+-				
++
+ 				Map userNameHexIdsMap = getUserNameHexIdsMap(auditLogDataFilters);
+ 				StringBuilder sb = new StringBuilder();
+ 				Set hexIdsOfUsers = new HashSet();
+@@ -759,7 +764,6 @@
+ 					}
+ 				}
+ 				String hexIdsCommaSeparatedForQuery = sb.toString();
+-				
+ 
+ 				List logs = new ArrayList();
+ 				ConnectionObjInterface connectionObj = (ConnectionObjInterface) GenericConnectionPool
+@@ -776,12 +780,12 @@
+ 								return retVal;
+ 							} else {
+ 								AuditLogDataQuery auditLogDataQuery = genericApi.getAuditLogDataQuery(xpaProgram);
+-								String[] uaFileNames = auditLogDataQuery.getQuery().split(
+-										XAppConstants.COLON + XAppConstants.COLON);
++								String[] uaFileNames = auditLogDataQuery.getQuery()
++										.split(XAppConstants.COLON + XAppConstants.COLON);
+ 								Map entities = genericApi.getEntities(xpaProgram);
+ 								String targetParamForSeparation = XAppListener.getApplicationProperties().getProperty(
+ 										XAppConstants.SYSTEM_PARAM_USERNAME_FILTER_FOR_SEGREGATION_OF_LOGS);
+-								
++
+ 								for (int i = 0; i < uaFileNames.length; i++) {
+ 									_logger.debug("uaFileNames=" + uaFileNames[i]);
+ 									List subLogs = new ArrayList();// per file
+@@ -800,16 +804,16 @@
+ 										dt.setTimeZone(TimeZone.getTimeZone(tableXPAProgParam.getParamHighValue()));
+ 										// userdef03=length
+ 										String filenameAttr = tableXPAProgParam.getUserDef01();
+-										String uaQuery = tableXPAProgParam
+-												.getUserDef03()
++										String uaQuery = tableXPAProgParam.getUserDef03()
+ 												.replaceFirst(XAppConstants.PLACEHOLDER,
+ 														dt.format(userActivityFilter.getFromDate().getTime()))
+ 												.replaceFirst(XAppConstants.PLACEHOLDER,
+ 														dt.format(userActivityFilter.getToDate().getTime()))
+ 												.replaceFirst(XAppConstants.PLACEHOLDER, hexIdsCommaSeparatedForQuery);
+ 										// userdef01=format
+-										List sforcedata = SForceUtils.getSFQueryData(XAppUtils
+-												.getApplicationProperty(XAppConstants.PROPERTY_SF_ENTITY_USERACTIVITY),
++										List sforcedata = SForceUtils.getSFQueryData(
++												XAppUtils.getApplicationProperty(
++														XAppConstants.PROPERTY_SF_ENTITY_USERACTIVITY),
+ 												uaQuery, connector);
+ 
+ 										for (int k = 0; sforcedata != null && k < sforcedata.size(); k++) {
+@@ -822,9 +826,10 @@
+ 												List headerRow = new ArrayList();
+ 												List dataRow = new ArrayList();
+ 												String encodedData = (String) dataMap.get(LOG_FILE);
+-												_logger.debug("file=" + uaFileNames[i] + ", encodedData=" + encodedData);
+-												CSVReader reader = new CSVReader(new StringReader(new String(
+-														new BASE64Decoder().decodeBuffer(encodedData))));
++												_logger.debug(
++														"file=" + uaFileNames[i] + ", encodedData=" + encodedData);
++												CSVReader reader = new CSVReader(new StringReader(
++														new String(new BASE64Decoder().decodeBuffer(encodedData))));
+ 												Integer userIdDerivedIndex = null;
+ 												while ((nextLine = reader.readNext()) != null) {
+ 													if (j == 0) {
+@@ -839,8 +844,7 @@
+ 															&& CollectionUtils.isNotEmpty(headerRow)
+ 															&& userIdDerivedIndex != null
+ 															&& dataRow.get(userIdDerivedIndex) != null
+-															&& dataRow.size() >= userIdDerivedIndex
+-															&& hexIdsOfUsers
++															&& dataRow.size() >= userIdDerivedIndex && hexIdsOfUsers
+ 																	.contains(dataRow.get(userIdDerivedIndex))) {
+ 														AuditLogData logData = new AuditLogData();
+ 														clobData = XAppUtils.buildCsv(headerRow, dataRow,
+@@ -897,8 +901,8 @@
+ 						for (int k = 0; k < auditLogDatas.length; k++) {
+ 							if (userDebugLog.equalsIgnoreCase(auditLogDatas[k].getUserDefVals()[0])) {
+ 								logIds.add(auditLogDatas[k].getLogId());
+-								String rawDebugLog = SForceUtils.readRestData(tokenDetails,
+-										auditLogDatas[k].getLogId(), XAppConstants.CONTENT_TYPE_TEXT_OR_XML);
++								String rawDebugLog = SForceUtils.readRestData(tokenDetails, auditLogDatas[k].getLogId(),
++										XAppConstants.CONTENT_TYPE_TEXT_OR_XML);
+ 								auditLogDatas[k].setClobData(XAppUtils.appendToCsv(auditLogDatas[k].getClobData(),
+ 										I18nUtil.getString(Locale.ENGLISH, "CROSSAPP.SFORCE.USER.DEBUG.RAW.LOG"),
+ 										"<pre>" + XAppUtils.replaceComma(rawDebugLog) + "</pre>"));
+@@ -947,7 +951,7 @@
+ 		}
+ 		_logger.debug("End::updateUsername");
+ 	}
+-	
++
+ 	public void clearOlderSFData(List<Integer> logIds, String systemId, TableXPAConnectors connector) {
+ 		if (CollectionUtils.isNotEmpty(logIds)) {
+ 			_logger.debug("Deleting read user debug logs::ids::" + logIds);
+@@ -961,17 +965,21 @@
+ 			if (chunk != 0) {
+ 				for (int i = 0; i < logIds.size(); i += chunk) {
+ 					List<Integer> logIdsDividedInChunk = logIds.subList(i, Math.min(logIds.size(), i + chunk));
+-					_logger.info("logIds that are need to be deleted =={}"+logIdsDividedInChunk);
+-					/*
+-					 * try { SForceUtils.deleteSFData(logIdsDividedInChunk.toArray(new String[0]),
+-					 * connector); } catch (XMLStreamException | IOException e) {
+-					 * _logger.error("Exception while deleting SF data --", e); }
+-					 */
++					_logger.info("logIds that are need to be deleted =={}" + logIdsDividedInChunk);
++
++					try {
++						SForceUtils.deleteSFData(logIdsDividedInChunk.toArray(new String[0]), connector);
++					} catch (XMLStreamException e) {
++						_logger.error("Exception while deleting SF data  XML--", e);
++					}catch (IOException e) {
++						_logger.error("Exception while deleting SF data IO--", e);
++					}
++
+ 				}
+ 			}
+ 		}
+ 	}
+-	
++
+ 	private Map<String, String> getUserNameHexIdsMap(AuditLogDataFilter[] auditLogDataFilters) {
+ 		Map userNameHexMap = new HashMap();
+ 		if (auditLogDataFilters != null) {
