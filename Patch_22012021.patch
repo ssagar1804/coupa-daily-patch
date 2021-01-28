@@ -1,0 +1,81 @@
+Index: source/com/greenlight/rta10/utils/CoupaUtils.java
+===================================================================
+--- source/com/greenlight/rta10/utils/CoupaUtils.java	(revision 10607)
++++ source/com/greenlight/rta10/utils/CoupaUtils.java	(revision 10608)
+@@ -16,6 +16,7 @@
+ import javax.net.ssl.TrustManager;
+ 
+ import org.apache.commons.httpclient.HttpStatus;
++import org.apache.commons.lang3.StringUtils;
+ import org.apache.http.HttpHeaders;
+ import org.apache.http.HttpResponse;
+ import org.apache.http.StatusLine;
+@@ -48,6 +49,7 @@
+ 	private static RTADSLogger _logger = RTADSLoggerFactory.getLogger(CoupaUtils.class);
+ 
+ 	private static final String OFFSET = "offset=";
++	private static final String LIMIT = "limit=";
+ 	private static final String DELETE_COUPA_ROLE = "DELETE FROM TABLENAME WHERE SYSTEM_NAME = ? AND ROLETYPE = ?";
+ 	private static final String INSERT_COUPA_ROLE = "INSERT INTO GLT_COUPA_ROLE (SYSTEM_ID, ID, ROLENAME, DESCRIPTION, OMNIPOTENT, SYSTEM_ROLE, ROLETYPE, CREATED_AT, UPDATED_AT, CREATE_DATETIME, UPDATE_DATETIME) VALUES (?,?,?,?,?,?,?,?,?,?,?)";
+ 
+@@ -147,19 +149,21 @@
+ 		TableXPAConnectors connector = getCOUPAAPIGEEConnection(systemName);
+ 
+ 		int offset = 0;
+-		int batchSize = 50;
+ 		CloseableHttpClient client = null;
+ 		JDBCConnectionImpl conn = null;
+ 		try {
++			//Here the systemName variable points toward the systemId
++			int batchSize = getActualBatchSize(systemName);
++			
+ 			int totalCount = 0;
+ 			String responseData = XAppConstants.BLANK;
+ 			String clientId = CoupaConstants.BASIC + connector.getUserDef04();
+ 			String oAuthTokenUrl = connector.getUserDef01() + CoupaConstants.READ_USERS_SUFFIX;
+ 			String originalUrl = connector.getUserDef02();
+ 			if (originalUrl.contains(XAppConstants.QMARK)) {
+-				originalUrl += XAppConstants.AMPH + OFFSET;
++				originalUrl += XAppConstants.AMPH + LIMIT+batchSize+XAppConstants.AMPH+OFFSET;
+ 			} else {
+-				originalUrl += XAppConstants.QMARK + OFFSET;
++				originalUrl += XAppConstants.QMARK +LIMIT+batchSize+XAppConstants.AMPH + OFFSET;
+ 			}
+ 
+ 			String bearerToken = getOAuthToken(oAuthTokenUrl, clientId, errorList);
+@@ -646,5 +650,23 @@
+ 		}
+ 		return connector;
+ 	}
++	
++	// Method to calculate the actual batch size which is configured in the system
++	// parameter
++	private static int getActualBatchSize(String systemId) {
++		int batchSize = 50;
++		String userFetchLimit = SystemDAO.getSystemParamValue(CoupaConstants.USER_FETCH_LIMIT, systemId);
++		if (StringUtils.isNotBlank(userFetchLimit)) {
++			try {
++				batchSize = Integer.valueOf(userFetchLimit.trim());
++				if (batchSize < 1 || batchSize > 50) {
++					batchSize = 50;
++				}
++			} catch (NumberFormatException e) {
++				_logger.debug("Batch size entered " + userFetchLimit + " is not of proper number format");
++			}
++		}
++		return batchSize;
++	}
+ 
+ }
+Index: source/com/greenlight/xplatformadapter/utils/CoupaConstants.java
+===================================================================
+--- source/com/greenlight/xplatformadapter/utils/CoupaConstants.java	(revision 10607)
++++ source/com/greenlight/xplatformadapter/utils/CoupaConstants.java	(revision 10608)
+@@ -87,5 +87,7 @@
+ 	public static final String COUPA = "COUPA";
+ 	public static final String ERP = "ERP";
+ 	public static final String GLT_COUPA_ROLE = "GLT_COUPA_ROLE";
++	
++	public static final String USER_FETCH_LIMIT= "USER_FETCH_LIMIT";
+ 
+ }

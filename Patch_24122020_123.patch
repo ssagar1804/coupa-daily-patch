@@ -189,3 +189,25 @@ Index: source/com/greenlight/rta10/executionpoints/impl/RTA10SFORCEImpl.java
  	private Map<String, String> getUserNameHexIdsMap(AuditLogDataFilter[] auditLogDataFilters) {
  		Map userNameHexMap = new HashMap();
  		if (auditLogDataFilters != null) {
+		
+		
+		
+		
+		
+		
+		
+		
+		I updated on last Friday I was debuggin and analyzing on addUser, edit user , then lock user and unlock 
+		currentyy I am testing for addRole and removeRole.
+		and asked Kanchan for her time coupa desing flow and if she isn't available today share us the document atleast so that we can ready with some queries before hand the session starts that may save time for both of us.
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		

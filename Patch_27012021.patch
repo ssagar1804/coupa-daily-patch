@@ -1,0 +1,352 @@
+Index: source/com/greenlight/rqAdapter/adapter/extraction/GenericResqAdapter.java
+===================================================================
+--- source/com/greenlight/rqAdapter/adapter/extraction/GenericResqAdapter.java	(revision 7335)
++++ source/com/greenlight/rqAdapter/adapter/extraction/GenericResqAdapter.java	(revision 7336)
+@@ -466,7 +466,7 @@
+ 		}
+ 	}
+ 	
+-	public void populateUserActivityReportFilters(MapClass additionalInputs, Map filters) {
++	public void populateUserActivityReportFilters(MapClass additionalInputs,Map filterDependents , Map filters) {
+ 		try {
+ 			// Make ERP call
+ 			String reportHeaderData = RTADSIntegrationUtility.getERPDataOverHttp(additionalInputs.getValues()[0], XAppConstants.RTA10_GETUSERACTIVITY, EMERGENCY_ACCESS_SERVLET_URL, null);
+@@ -480,11 +480,15 @@
+ 						if("true".equalsIgnoreCase(temp[j])){
+ 							String[] parts = temp[j+1].split(XAppConstants.EQUALTO);
+ 							filters.put(parts[0], parts[1]);
+-						}
++							if(parts.length>2) {
++								filterDependents.put(parts[0] , parts[2]);
++							}
++						}						
+ 					}
+ 				}
+ 			}
+ 		} catch (java.lang.Exception e) {
++			e.printStackTrace();
+ 			XAppUtils.sop(e);
+ 		} finally {
+ 		}
+Index: source/com/greenlight/rqAdapter/framework/controller/XAppController.java
+===================================================================
+--- source/com/greenlight/rqAdapter/framework/controller/XAppController.java	(revision 7335)
++++ source/com/greenlight/rqAdapter/framework/controller/XAppController.java	(revision 7336)
+@@ -195,7 +195,9 @@
+ 				
+ 				_logger.info("Processing action[actionId=" + actionId + ", actionClass=" + actionDetails.getActionClass() + ", returnPage=" + returnPage + "]") ;
+ 				RequestDispatcher dispatcher = getServletContext().getRequestDispatcher(returnPage);
+-				dispatcher.forward(request, response) ;
++				if(dispatcher!=null) {
++					dispatcher.forward(request, response) ;
++				}
+ 		   	}			
+ 			
+ 
+Index: source/com/greenlight/rqAdapter/dao/resqDAO/UserActvtTmplRptDAO.java
+===================================================================
+--- source/com/greenlight/rqAdapter/dao/resqDAO/UserActvtTmplRptDAO.java	(revision 7335)
++++ source/com/greenlight/rqAdapter/dao/resqDAO/UserActvtTmplRptDAO.java	(revision 7336)
+@@ -2516,11 +2516,11 @@
+ 		genericResqAdapter.populateUserActivityReportHeader(mapClass, userDefColHeadings, userDefCols, properties);
+ 	}	
+ 	
+-	public static void getReportFilters(Map userDefFilters,
++	public static void getReportFilters(Map userDefFilters,Map filterDependents,
+ 			 Integer rqSystemId) {
+ 		GenericResqAdapter genericResqAdapter = new GenericResqAdapter();
+ 		com.greenlight.service.resq.MapClass mapClass = XAppUtils.getMapClass(rqSystemId);
+-		genericResqAdapter.populateUserActivityReportFilters(mapClass, userDefFilters);
++		genericResqAdapter.populateUserActivityReportFilters(mapClass,filterDependents, userDefFilters);
+ 	}
+ 	
+ 	public static String createAttachmentForEscalationRecords(String selectedIds, Integer rqSystemId, Locale locale, GenericDbMessages genericDbMessages){
+@@ -3415,6 +3415,46 @@
+ 		_logger.debug("End:seperateRqLogIds");
+ 		return rqLogIdsArr;
+ 	}
++	
++	public static List getDistinctDependentValues(Integer systemId,
++			String dependentParentFilter, String dependentParentFilterValue,
++			String dependentChildFilter) {
++		XAppConnection conn = null;
++		PreparedStatement stmt = null;
++		ResultSet rs = null;
++		List dependentList = new ArrayList();
++		try {
++			String selectOwnerString = "SELECT  DISTINCT " + dependentChildFilter + " FROM GLT_RQ_USER_ACTVTY "
++					+ "WHERE  RQ_SYSTEM_ID= ? ";
++			
++			if(StringUtils.isNotBlank(dependentParentFilterValue)) {
++				selectOwnerString=selectOwnerString+	"AND " + dependentParentFilter + "=? ";
++			}
++
++			_logger.debug("Query prepared to get dependent value ==" + selectOwnerString);
++			conn = XAppDBConnectionManager.getInstance().getConnection();
++
++			stmt = conn.prepareStatement(selectOwnerString);
++			stmt.setInt(1, systemId);
++			if(StringUtils.isNotBlank(dependentParentFilterValue)) {
++				stmt.setString(2, dependentParentFilterValue);
++			}
++			rs = stmt.executeQuery();
++			while (rs.next()) {
++				String dependentValue=rs.getString(dependentChildFilter);
++				if(StringUtils.isNotBlank(dependentValue)) {
++					dependentList.add(dependentValue);
++				}
++			}
++		} catch (SQLException e) {
++			_logger.debug(e);
++		} catch (Exception e) {
++			_logger.debug(e);
++		} finally {
++			XAppUtils.closeOpenCursors(conn, stmt, rs);
++		}
++		return dependentList;
++	}
+ 
+ 
+ }
+\ No newline at end of file
+Index: source/com/greenlight/rqAdapter/ui/actions/resqActions/UserActvtTmplRptAction.java
+===================================================================
+--- source/com/greenlight/rqAdapter/ui/actions/resqActions/UserActvtTmplRptAction.java	(revision 7335)
++++ source/com/greenlight/rqAdapter/ui/actions/resqActions/UserActvtTmplRptAction.java	(revision 7336)
+@@ -15,7 +15,6 @@
+ import java.io.OutputStream;
+ import java.io.PrintWriter;
+ import java.util.ArrayList;
+-import java.util.Arrays;
+ import java.util.List;
+ import java.util.Map;
+ import java.util.TreeMap;
+@@ -26,25 +25,20 @@
+ import org.apache.commons.io.IOUtils;
+ import org.apache.log4j.Logger;
+ 
++import com.google.gson.Gson;
+ import com.greenlight.rqAdapter.dao.GenericDbMessages;
+-import com.greenlight.rqAdapter.dao.SystemDAO;
+-import com.greenlight.rqAdapter.dao.resqDAO.CommonMethodsDAO;
+-import com.greenlight.rqAdapter.dao.resqDAO.ResqAdminDAO;
+ import com.greenlight.rqAdapter.dao.resqDAO.UserActvtTmplRptDAO;
+ import com.greenlight.rqAdapter.exceptions.XAppActionException;
+ import com.greenlight.rqAdapter.framework.actionpermissions.ResQNamePermission;
+ import com.greenlight.rqAdapter.framework.actions.XAppAction;
+ import com.greenlight.rqAdapter.framework.actions.XAppActionDetails;
+-import com.greenlight.rqAdapter.framework.messagebundle.I18nUtil;
+ import com.greenlight.rqAdapter.framework.security.User;
+ import com.greenlight.rqAdapter.logs.Log;
+ import com.greenlight.rqAdapter.ui.forms.resqForms.AuditLogForm;
+ import com.greenlight.rqAdapter.ui.forms.resqForms.UserActvtTmplRptForm;
+-import com.greenlight.rqAdapter.utils.RTADSIntegrationUtility;
+ import com.greenlight.rqAdapter.utils.XAppConstants;
+ import com.greenlight.rqAdapter.utils.XAppListener;
+ import com.greenlight.rqAdapter.utils.XAppUtils;
+-import com.ibm.icu.util.Calendar;
+ 
+ 
+ /**
+@@ -150,7 +144,7 @@
+ 				}
+ 				
+ 				///get dynamic user_def filters & data///
+-				UserActvtTmplRptDAO.getReportFilters(userActvtTmplRptForm.getUserDefFilters(), userActvtTmplRptForm.getRqSystemId());
++				UserActvtTmplRptDAO.getReportFilters(userActvtTmplRptForm.getUserDefFilters(),userActvtTmplRptForm.getUserDefFiltersDependent(), userActvtTmplRptForm.getRqSystemId());
+ 				if(userActvtTmplRptForm.getUserDefFilters().size()>0){	//if there are filters.
+ 					userActvtTmplRptForm.setFilterDataList(UserActvtTmplRptDAO.getReportFiltersData(userActvtTmplRptForm.getUserDefFilters(), userActvtTmplRptForm.getRqSystemId()));
+ 				
+@@ -710,6 +704,25 @@
+ 				
+ 				return actionDetails.getReturnPage("saveEscalateRedirect") ;
+ 				
++			}else if("getDependentDropDown.do".equalsIgnoreCase(actionDetails.getActionId().trim())) {
++				
++				String dependentParentFilter=request.getParameter("dependentParentFilter");
++				String dependentParentFilterValue=request.getParameter("dependentParentFilterValue");
++				String dependentChildFilter=request.getParameter("dependentChildFilter");
++
++				List dependentValues=UserActvtTmplRptDAO.getDistinctDependentValues(
++						loggedUser.getSystemId(), 
++						dependentParentFilter, dependentParentFilterValue, dependentChildFilter);
++				
++				PrintWriter out = null;
++				try {
++					response.setContentType("text/html");
++					out = response.getWriter();
++					out.write(new Gson().toJson(dependentValues));
++				} catch (Exception e) {
++					XAppUtils.sop(e);
++				}
++				return null ;
+ 			}
+ 			
+ 		}catch (Exception e) {
+Index: source/com/greenlight/rqAdapter/ui/forms/resqForms/UserActvtTmplRptForm.java
+===================================================================
+--- source/com/greenlight/rqAdapter/ui/forms/resqForms/UserActvtTmplRptForm.java	(revision 7335)
++++ source/com/greenlight/rqAdapter/ui/forms/resqForms/UserActvtTmplRptForm.java	(revision 7336)
+@@ -139,6 +139,8 @@
+ 	private String ageOfActivity = "";
+ 	private String fetchReportFrom="";
+ 	
++	private Map userDefFiltersDependent = new TreeMap();
++	
+ 	public String getRoleName() {
+ 		return roleName;
+ 	}
+@@ -1104,6 +1106,14 @@
+ 	public void setUserDefFilterData(Map userDefFilterData) {
+ 		this.userDefFilterData = userDefFilterData;
+ 	}
++	
++	public Map getUserDefFiltersDependent() {
++		return userDefFiltersDependent;
++	}
++
++	public void setUserDefFiltersDependent(Map userDefFiltersDependent) {
++		this.userDefFiltersDependent = userDefFiltersDependent;
++	}
+ 
+ 	public void initLists()
+ 	{
+Index: source/config/appNavigationConfig.xml
+===================================================================
+--- source/config/appNavigationConfig.xml	(revision 7335)
++++ source/config/appNavigationConfig.xml	(revision 7336)
+@@ -830,6 +830,13 @@
+ 			<RETURN_PAGE ID="SUCCESS" PAGE="/successPage.jsp" />	 			 
+ 			<RETURN_PAGE ID="ERROR" PAGE="/errorPage.jsp" />	 
+ 		</NAVIGATION>
++		<!-- Get dependent value action -->	
++		<NAVIGATION  SCREEN_ID="DEPENDENT_VALUE"  ACTION_ID="getDependentDropDown.do"  ACTION_CLASS="com.greenlight.rqAdapter.ui.actions.resqActions.UserActvtTmplRptAction">
++			<RETURN_PAGE ID="SUCCESS" PAGE="/successPage.jsp" />	 			 
++			<RETURN_PAGE ID="ERROR" PAGE="/errorPage.jsp" />	 
++		</NAVIGATION>
++		<!-- Get dependent value action -->	
++		
+ 		<NAVIGATION  SCREEN_ID="RESQ_USERACTVT_REPORT_REVIEW2"  ACTION_ID="saveReview.do"  ACTION_CLASS="com.greenlight.rqAdapter.ui.actions.resqActions.UserActvtTmplRptAction">
+ 			<RETURN_PAGE ID="showReviewWindow" PAGE="/jsp/popupRedirect.jsp" />			
+ 			<RETURN_PAGE ID="SUCCESS" PAGE="/successPage.jsp" />	 			 
+Index: webContent/jsp/resqJsp/showUserActvtTmplRpt.jsp
+===================================================================
+--- webContent/jsp/resqJsp/showUserActvtTmplRpt.jsp	(revision 7335)
++++ webContent/jsp/resqJsp/showUserActvtTmplRpt.jsp	(revision 7336)
+@@ -1726,9 +1726,12 @@
+ function insertFilter() {
+ 	var table = document.getElementById("Table1");
+ 	var row = table.insertRow();
++	let event = null;
++	let selectTobeModifiedBasedOnSelection= null;
+ 	<% Object[] selectedValues = {},selectedFilters = {};
+ 	Map filtersMap = userActvtTmplRptForm.getUserDefFilters();
+ 	Map filtersDataMap = userActvtTmplRptForm.getUserDefFilterData();
++	Map filtersDependentDataMap = userActvtTmplRptForm.getUserDefFiltersDependent();
+ 	if(filtersDataMap != null && filtersDataMap.size() > 0){
+ 		selectedValues = filtersDataMap.values().toArray();
+ 		selectedFilters = filtersDataMap.keySet().toArray();
+@@ -1760,6 +1763,14 @@
+ 		  	//set name
+ 		    element2.name="<%= Keys[i] %>";
+ 		    element2.className = "list_menu_drop_down_wide";
++		    <%if(filtersDependentDataMap.get(key)!=null){%>
++	    	   element2.setAttribute('data-dependent' ,"<%=filtersDependentDataMap.get(key)%>");
++	    	   element2.addEventListener("change", function(){
++	    	   //This select option is changed
++ 		       fetchAndUpdateUserDefDropDown(this.id,this.value,this.getAttribute('data-dependent'),
++ 		    		   '<%=filtersDataMap.get(Keys[i])%>');
++	    	});
++		    <%}%>
+ 		    var option = document.createElement("option");
+ 		    option.value = "";
+ 		    option.innerHTML = "-- Select --";
+@@ -1796,10 +1807,19 @@
+ 		        element2.appendChild(option);
+ 		     }
+ 		    cell2.appendChild(element2);
+-	<%
++	<%}for(int k=0 ; k<Keys.length ; k++){%>
++		event = new Event('change');
++		selectTobeModifiedBasedOnSelection=document.getElementById('<%=Keys[k]%>');
++		if(selectTobeModifiedBasedOnSelection){
++			selectTobeModifiedBasedOnSelection.dispatchEvent(event);
++			<%for (int j = 0; j < selectedValues.length; j++) {%>
++	        if('null'!='<%=selectedValues[j]%>' & '<%=selectedFilters[j]%>'=='<%= Keys[k] %>'){
++				console.log('<%=selectedValues[j]%>');
++				selectTobeModifiedBasedOnSelection.value='<%=selectedValues[j]%>';
++	        }
++	     <%}%>
+ 		}
+-	}
+-	%>
++	<%}}%>
+ }
+ 
+ function downloadGeneratedFile(fileName){
+@@ -1818,5 +1838,65 @@
+ 	}
+ 	return value;
+ }
++
++//Catch the change in select event
++function fetchAndUpdateUserDefDropDown(dependentParentFilter ,dependentParentFilterValue ,
++									   dependentChildFilter, selectedValue ){
++	if(dependentParentFilter && dependentChildFilter){
++	 let xmlhttp=GetXmlHttpObject();
++	 
++	 if(!dependentParentFilterValue && selectedValue!='null'){
++		 dependentParentFilterValue = selectedValue;
++	 }
++	 
++	 let url = 'getDependentDropDown.do?dependentParentFilter='+dependentParentFilter
++			+'&dependentParentFilterValue='+dependentParentFilterValue
++			+'&dependentChildFilter='+dependentChildFilter;
++	 
++	 xmlhttp.onreadystatechange = function() {
++		if (this.readyState == 4 && this.status == 200) {
++		 if(xmlhttp.responseText){
++		 	let dependentValues = JSON.parse(xmlhttp.responseText);
++		 	clearPreviousAndAppendNewOptions(dependentChildFilter,dependentValues);
++		 }
++		}
++	 };
++	 //Don't make async true here or else filters wont work properly after clicking run report 
++	 xmlhttp.open("GET",url,false);
++	 xmlhttp.send();
++		
++   }
++	
++   function clearPreviousAndAppendNewOptions(dependentChildFilter,dependentValues){
++	   let dependentChildFilterElement = document.getElementById(dependentChildFilter);
++	   removePrevious(dependentChildFilterElement);
++	   appendNew(dependentChildFilterElement , dependentValues,dependentChildFilter);
++   }
++   
++   function removePrevious(dependentChildFilterElement){
++	   var length = dependentChildFilterElement.options.length;
++	   for (let i = length-1; i >= 0; i--) {
++		   dependentChildFilterElement.options[i] = null;
++	   }
++   }
++   
++   function appendNew(dependentChildFilterElement , dependentValues){
++	   let option = document.createElement("option");
++	   option.value = "";
++	   option.innerHTML = "-- Select --";
++	   dependentChildFilterElement.appendChild(option);
++	   
++	   for(let i=0  ; i<dependentValues.length ; i++){
++		 option = document.createElement("option");
++		 option.value = dependentValues[i];
++		 option.innerHTML = dependentValues[i];
++		 dependentChildFilterElement.appendChild(option);
++	   }
++	   //Need to fire event forcibly as auto change is not getting fired even if dropdown is altered
++	   let event = new Event('change');
++	   dependentChildFilterElement.dispatchEvent(event);
++   }
++}
++
+ 	</script>
+ </html>
