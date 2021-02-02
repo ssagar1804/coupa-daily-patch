@@ -1,0 +1,34 @@
+Index: source/com/greenlight/rta10/provisioning/handler/RTA10CUPCOUPAAPIGEEImpl1.java
+===================================================================
+--- source/com/greenlight/rta10/provisioning/handler/RTA10CUPCOUPAAPIGEEImpl1.java	(revision 10626)
++++ source/com/greenlight/rta10/provisioning/handler/RTA10CUPCOUPAAPIGEEImpl1.java	(revision 10627)
+@@ -72,10 +72,11 @@
+ 		return response;
+ 	}
+ 
+-	private SpmlResponse createSpmlResponseForRole(SpmlResponse response, String flag, String msg) {
++	private SpmlResponse createSpmlResponseForRole(SpmlResponse response, String flag, String msg, String roleName) {
+ 		if (flag != null && XAppConstants.SUCCESS.equalsIgnoreCase(flag.trim())) {
+ 			response.setResult(XAppConstants.SUCCESS);
+ 		} else if (flag != null && XAppConstants.FAILURE.equalsIgnoreCase(flag.trim())) {
++			response.setOperationalAttribute(roleName, roleName);
+ 			response.setResult(XAppConstants.FAILURE);
+ 			response.setErrorMessage(msg);
+ 			if (msg == null)
+@@ -83,6 +84,7 @@
+ 			else
+ 				response.setError(msg);
+ 		} else if (flag != null && XAppConstants.ERROR.equalsIgnoreCase(flag.trim())) {
++			response.setOperationalAttribute(roleName, roleName);
+ 			XAppUtils.sop("Error Condition set");
+ 			response.setResult(XAppConstants.FAILURE);
+ 			response.setErrorMessage(msg);
+@@ -494,7 +496,7 @@
+ 									response.setOperationalAttribute(
+ 											roles[i],
+ 											createSpmlResponseForRole(spmlRequest.createResponse(),
+-													XAppConstants.FAILURE, (String) roleErrMap.get(roles[i])));
++													XAppConstants.FAILURE, (String) roleErrMap.get(roles[i]),roles[i]));
+ 								} else {
+ 									response.setOperationalAttribute(roles[i], genericApi.createSpmlResponse(
+ 											spmlRequest.createResponse(), XAppConstants.FAILURE, null));

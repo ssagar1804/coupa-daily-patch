@@ -1,0 +1,67 @@
+Index: showUserActvtTmplRpt.jsp
+===================================================================
+--- showUserActvtTmplRpt.jsp	(revision 7374)
++++ showUserActvtTmplRpt.jsp	(revision 7375)
+@@ -34,7 +34,6 @@
+ <%@ taglib uri="/WEB-INF/taglibs/i18n.tld" prefix="i18n"%>
+ 
+ <%@ include file="/js/paginationAndSort.js" %>
+-
+ <%
+ User loggedUser = (User) session.getAttribute("CURRENT_USER") ;
+ User umeUser = (User) request.getSession().getAttribute("CURRENT_USER") ;
+@@ -48,6 +47,8 @@
+ <script language="JavaScript" src="<%= contextPath %>/js/numberFunctions.js"></script>
+ <script language="JavaScript" src="<%= contextPath %>/js/FerantLib.js"></script>
+ <script language="JavaScript" src="<%= contextPath %>/js/Calender1.js"></script>
++<script src="<%= contextPath %>/pivottable/jquery.min.js"></script>
++<script src="<%= contextPath %>/fusionCharts/graph/Code/assets/ui/js/json2.js" type="text/javascript"></script>
+ 
+ 
+ <html>
+@@ -1765,11 +1766,7 @@
+ 		    element2.className = "list_menu_drop_down_wide";
+ 		    <%if(filtersDependentDataMap.get(key)!=null){%>
+ 	    	   element2.setAttribute('data-dependent' ,"<%=filtersDependentDataMap.get(key)%>");
+-	    	   element2.addEventListener("change", function(){
+-	    	   //This select option is changed
+- 		       fetchAndUpdateUserDefDropDown(this.id,this.value,this.getAttribute('data-dependent'),
+- 		    		   '<%=filtersDataMap.get(Keys[i])%>');
+-	    	});
++	    	   element2.setAttribute('data-dependent-selected' ,"<%=filtersDataMap.get(Keys[i])%>");
+ 		    <%}%>
+ 		    var option = document.createElement("option");
+ 		    option.value = "";
+@@ -1808,10 +1805,11 @@
+ 		     }
+ 		    cell2.appendChild(element2);
+ 	<%}for(int k=0 ; k<Keys.length ; k++){%>
+-		event = new Event('change');
++		//event = new Event('change');
+ 		selectTobeModifiedBasedOnSelection=document.getElementById('<%=Keys[k]%>');
+ 		if(selectTobeModifiedBasedOnSelection){
+-			selectTobeModifiedBasedOnSelection.dispatchEvent(event);
++			$(selectTobeModifiedBasedOnSelection).trigger('change');
++			//selectTobeModifiedBasedOnSelection.dispatchEvent(event);
+ 			<%for (int j = 0; j < selectedValues.length; j++) {%>
+ 	        if('null'!='<%=selectedValues[j]%>' & '<%=selectedFilters[j]%>'=='<%= Keys[k] %>'){
+ 				console.log('<%=selectedValues[j]%>');
+@@ -1893,10 +1891,16 @@
+ 		 dependentChildFilterElement.appendChild(option);
+ 	   }
+ 	   //Need to fire event forcibly as auto change is not getting fired even if dropdown is altered
+-	   let event = new Event('change');
+-	   dependentChildFilterElement.dispatchEvent(event);
++	   //let event = new Event('change');
++	   //dependentChildFilterElement.dispatchEvent(event);
+    }
+ }
+ 
++$('html').on('change' , '.list_menu_drop_down_wide' ,function(){
++	//console.log('this.id,this.value =='+this.id+'---|'+this.value+'|--'+this.getAttribute('data-dependent'));
++	fetchAndUpdateUserDefDropDown(this.id,this.value,this.getAttribute('data-dependent'),
++			this.getAttribute('data-dependent-selected'));
++});
++
+ 	</script>
+ </html>

@@ -1,0 +1,54 @@
+Index: Scheduler.java
+===================================================================
+--- Scheduler.java	(revision 7348)
++++ Scheduler.java	(revision 7349)
+@@ -1349,10 +1349,21 @@
+ 				
+ 				if(roleWithErrorList.size() > 0) {
+ 					// send email to admin and owner
+-					
+ 					String content = XAppConstants.BLANK_STRING;
+ 					String subject = XAppConstants.BLANK_STRING;
+ 					// Send email to resq admin. CC to template owner.
++					
++					//Add support emails in case of failure
++					boolean includeSupportMail= Boolean.valueOf(XAppUtils.getFilePathForProp().getProperty(XAppConstants.INCLUDE_SUPPORT_EMAILS_ON_ASSIGNMENT_FAILURE_OPERATION));
++					boolean includeMailListToRecipient = Boolean.valueOf(XAppUtils.getFilePathForProp().getProperty(XAppConstants.INCLUDE_MAIL_LIST_TO_RECIPIENT_EMAIL_ASSIGNMENT_FAILURE_OPERATION));
++
++					if (includeSupportMail) {
++						multipleCc.addAll(SystemDAO.getSupportEmails(obj.getSystemId()));
++					}
++					if (includeMailListToRecipient) {
++						multipleCc.add((String)mailList.get(9));
++					}
++					
+ 					if(isGlobal && (isProxy || isDelegate)) {
+ 						if(isProxy){
+ 							content = getProxyEmailContents(String.valueOf(mailList.get(2)), errorDesc, true);
+@@ -1608,6 +1619,19 @@
+ 					getEmailToAndCc(rqTmplId, systemId, multipleTo, multipleCc);
+ 					String content = XAppConstants.BLANK_STRING;
+ 					String subject = XAppConstants.BLANK_STRING;
++					
++					//Add support emails in case of failure
++					boolean includeSupportMail= Boolean.valueOf(XAppUtils.getFilePathForProp().getProperty(XAppConstants.INCLUDE_SUPPORT_EMAILS_ON_ASSIGNMENT_FAILURE_OPERATION));
++					boolean includeMailListToRecipient = Boolean.valueOf(XAppUtils.getFilePathForProp().getProperty(XAppConstants.INCLUDE_MAIL_LIST_TO_RECIPIENT_EMAIL_ASSIGNMENT_FAILURE_OPERATION));
++
++					if (includeSupportMail) {
++						multipleCc.addAll(SystemDAO.getSupportEmails(systemId));
++					}
++					
++					if (includeMailListToRecipient) {
++						multipleCc.add((String)mailList.get(9));
++					}
++					
+ 					if(isGlobal && (isProxy || isDelegate)) {
+ 						if(isProxy){
+ 							content = getProxyEmailContents(String.valueOf(mailList.get(2)), errorDesc, false);
+
+
+
+rtads.servlet.url
+
+
+User activity review copy paste validation/save/cancel not working in IE11

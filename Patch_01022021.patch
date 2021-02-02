@@ -1,0 +1,182 @@
+Index: source/com/greenlight/rqAdapter/utils/RTADSIntegrationUtility.java
+===================================================================
+--- source/com/greenlight/rqAdapter/utils/RTADSIntegrationUtility.java	(revision 7358)
++++ source/com/greenlight/rqAdapter/utils/RTADSIntegrationUtility.java	(revision 7359)
+@@ -21,6 +21,7 @@
+ import java.util.List;
+ import java.util.Map;
+ 
++import org.apache.commons.lang3.StringUtils;
+ import org.apache.log4j.Logger;
+ import org.openspml.message.AddRequest;
+ import org.openspml.message.Attribute;
+@@ -508,36 +509,64 @@
+ 		return mod;
+ 	}
+ 	
+-	public static List getResQUserRoleOutput(
+-			BatchResponse batchResponse, List filters) {
+-		List output = new ArrayList();		
+-		if(batchResponse != null) {
++	public static List getResQUserRoleOutput(BatchResponse batchResponse, List filters) {
++		List output = new ArrayList();
++		if (batchResponse != null) {
+ 			ModifyResponse modifyResponse = null;
+-			UserRoleOutput userRoleOutput = null;
+ 			for (int i = 0; i < batchResponse.getResponses().size(); i++) {
+-				UserRoleFilters userRoleFilters = (UserRoleFilters) filters.get(i);
+ 				modifyResponse = (ModifyResponse) batchResponse.getResponses().get(i);
+-				userRoleOutput = new UserRoleOutput();
+-				userRoleOutput.setUserRole(new UserRole());
+-				if(modifyResponse.getResult().indexOf(XAppConstants.HASH) != -1) {
+-					userRoleOutput.getUserRole().setSuccessFlag(modifyResponse.getResult().substring(modifyResponse.getResult().indexOf(XAppConstants.HASH) + 1, modifyResponse.getResult().indexOf(XAppConstants.HASH) + 2).toUpperCase());
++				if (modifyResponse.getOperationalAttributes() != null
++						&& !modifyResponse.getOperationalAttributes().isEmpty()) {
++					for (int j = 0; j < filters.size(); j++) {
++						UserRoleFilters userRoleFilters = (UserRoleFilters) filters.get(j);
++						String roleNameFromFilterList = userRoleFilters.getToRoleName();
++						if (modifyResponse.getOperationalAttribute(roleNameFromFilterList) != null) {
++							String operationalAttributeValue = (String) modifyResponse
++									.getOperationalAttribute(roleNameFromFilterList).getValue();
++							if (StringUtils.isNotBlank(operationalAttributeValue)) {
++								if (roleNameFromFilterList.equalsIgnoreCase(operationalAttributeValue)) {
++									populateOutputList(output, modifyResponse, userRoleFilters);
++									break;
++								}
++							}
++						}
++					}
+ 				} else {
+-					userRoleOutput.getUserRole().setSuccessFlag(modifyResponse.getResult().substring(0, 1).toUpperCase());
+-				}				
+-				userRoleOutput.getUserRole().setUserId(userRoleFilters.getUserName());
+-				userRoleOutput.getUserRole().setRole(userRoleFilters.getToRoleName());
+-				if(!XAppUtils.isBlankOrNull(modifyResponse.getErrorMessage()))  {
+-					userRoleOutput.getUserRole().setErrorDescription(modifyResponse.getErrorMessage());
+-				} 
+-				XAppUtils.sop("getResQUserRoleOutput [RequestId=" + modifyResponse.getRequestId() + "] ERROR" + modifyResponse.getError());
+-				XAppUtils.sop("getResQUserRoleOutput [RequestId=" + modifyResponse.getRequestId() + "] ERRORMSG" + modifyResponse.getErrorMessage());
+-				XAppUtils.sop("getResQUserRoleOutput [RequestId=" + modifyResponse.getRequestId() + "] RESULT" + modifyResponse.getResult());		
+-				output.add(userRoleOutput);
+-			}			
+-				
++					UserRoleFilters userRoleFilters = (UserRoleFilters) filters.get(i);
++					populateOutputList(output, modifyResponse, userRoleFilters);
++				}
++			}
+ 		}
+ 		return output;
+ 	}
++
++	private static void populateOutputList(List output, ModifyResponse modifyResponse,
++			UserRoleFilters userRoleFilters) {
++		String result = modifyResponse.getResult();
++		//modifyResponse.getOperationalAttribute(result);
++		UserRoleOutput userRoleOutput = new UserRoleOutput();
++		userRoleOutput.setUserRole(new UserRole());
++		UserRole userRole = userRoleOutput.getUserRole();
++		if (result.indexOf(XAppConstants.HASH) != -1) {
++			String successFlag = result.substring(result.indexOf(XAppConstants.HASH) + 1,
++					result.indexOf(XAppConstants.HASH) + 2).toUpperCase();
++			userRole.setSuccessFlag(successFlag);
++		} else {
++			userRole.setSuccessFlag(result.substring(0, 1).toUpperCase());
++		}
++		userRole.setUserId(userRoleFilters.getUserName());
++		userRole.setRole(userRoleFilters.getToRoleName());
++		if (!XAppUtils.isBlankOrNull(modifyResponse.getErrorMessage())) {
++			userRole.setErrorDescription(modifyResponse.getErrorMessage());
++		}
++		XAppUtils.sop("getResQUserRoleOutput [RequestId=" + modifyResponse.getRequestId()
++				+ "] ERROR" + modifyResponse.getError());
++		XAppUtils.sop("getResQUserRoleOutput [RequestId=" + modifyResponse.getRequestId()
++				+ "] ERRORMSG" + modifyResponse.getErrorMessage());
++		XAppUtils.sop("getResQUserRoleOutput [RequestId=" + modifyResponse.getRequestId()
++				+ "] RESULT" + result);
++		output.add(userRoleOutput);
++	}
+ 	
+ 	public static boolean getResQResetPasswordOutput(ModifyResponse modifyResponse, String userId) {
+ 		XAppUtils.sop("getResQResetPasswordOutput [RequestId=" + modifyResponse.getRequestId() + "] ERROR" + modifyResponse.getError());
+Index: source/com/greenlight/rqAdapter/scheduler/Scheduler.java
+===================================================================
+--- source/com/greenlight/rqAdapter/scheduler/Scheduler.java	(revision 7358)
++++ source/com/greenlight/rqAdapter/scheduler/Scheduler.java	(revision 7359)
+@@ -1488,26 +1488,37 @@
+ 	 * @param successRolesList
+ 	 * @param output
+ 	 */
+-	private String populateSuccessFailureLists(List roleWithErrorList,
+-			List successRolesList, List output, Locale locale, boolean isProxy, boolean isDelegate, List roleList, 
+-			Integer rqUserTmplId, Integer rqUserId, Integer rqSystemId, boolean isAssign) {
++	private String populateSuccessFailureLists(List roleWithErrorList, List successRolesList, List output,
++			Locale locale, boolean isProxy, boolean isDelegate, List roleList, Integer rqUserTmplId, Integer rqUserId,
++			Integer rqSystemId, boolean isAssign) {
+ 		String errorDesc = XAppConstants.BLANK_STRING;
+-		if(output != null && output.size() > 0) {			
++		if (output != null) {
+ 			for (int i = 0; i < output.size(); i++) {
+ 				UserRoleOutput userRoleOutput = (UserRoleOutput) output.get(i);
+-				if(XAppConstants.ROLE_ASSIGNED_STATUS_ERROR.equalsIgnoreCase(userRoleOutput.getUserRole().getSuccessFlag())) {
++				if(XAppConstants.ROLE_ASSIGNED_STATUS_ERROR.equalsIgnoreCase(userRoleOutput.getUserRole().getSuccessFlag())) {
+ 					roleWithErrorList.add(userRoleOutput.getUserRole().getRole());
+-					errorDesc += (isProxy ? I18nUtil.getString(locale,"EMAIL.CONTENT.PROXY") : isDelegate ? I18nUtil.getString(locale,"EMAIL.CONTENT.FFID"):I18nUtil.getString(locale,"EMAIL.CONTENT.FF.ROLE"));
+-					errorDesc += " = " + userRoleOutput.getUserRole().getRole() + XAppConstants.NEWLINE + I18nUtil.getString(locale,"RESQ.EMAIL.BODY6.USERTEMPLATE.ACTIVATION") + " = " + userRoleOutput.getUserRole().getErrorDescription() + XAppConstants.NEWLINE;
++					errorDesc += (isProxy ? I18nUtil.getString(locale, "EMAIL.CONTENT.PROXY")
++							: isDelegate ? I18nUtil.getString(locale, "EMAIL.CONTENT.FFID")
++									: I18nUtil.getString(locale, "EMAIL.CONTENT.FF.ROLE"));
++					errorDesc += " = " + userRoleOutput.getUserRole().getRole() + XAppConstants.NEWLINE
++							+ I18nUtil.getString(locale, "RESQ.EMAIL.BODY6.USERTEMPLATE.ACTIVATION") + " = "
++							+ userRoleOutput.getUserRole().getErrorDescription() + XAppConstants.NEWLINE;
+ 				} else {
+ 					successRolesList.add(userRoleOutput.getUserRole().getRole());
+ 				}
+-				if(roleList != null) {
+-					TableRQRoles tableRQRoles = (TableRQRoles) roleList.get(i);
+-					if(isAssign) {
+-						insertTmplAsgnedRoles(tableRQRoles, userRoleOutput.getUserRole(), rqUserTmplId, rqUserId, rqSystemId);
+-					} else {
+-						updateTmplUnAsgnedRoles(tableRQRoles, userRoleOutput.getUserRole(), rqUserTmplId, rqUserId, rqSystemId);
++				if (roleList != null) {
++					for (int j = 0; j < roleList.size(); j++) {
++						TableRQRoles tableRQRoles = (TableRQRoles) roleList.get(j);
++						if (tableRQRoles.getRoleName()!=null && tableRQRoles.getRoleName().equalsIgnoreCase(userRoleOutput.getUserRole().getRole())) {
++							if (isAssign) {
++								insertTmplAsgnedRoles(tableRQRoles, userRoleOutput.getUserRole(), rqUserTmplId,
++										rqUserId, rqSystemId);
++							} else {
++								updateTmplUnAsgnedRoles(tableRQRoles, userRoleOutput.getUserRole(), rqUserTmplId,
++										rqUserId, rqSystemId);
++							}
++						}
+ 					}
+ 				}
+ 			}
+Index: source/com/greenlight/rqAdapter/adapter/extraction/GenericResqAdapter.java
+===================================================================
+--- source/com/greenlight/rqAdapter/adapter/extraction/GenericResqAdapter.java	(revision 7358)
++++ source/com/greenlight/rqAdapter/adapter/extraction/GenericResqAdapter.java	(revision 7359)
+@@ -1,13 +1,11 @@
+ package com.greenlight.rqAdapter.adapter.extraction;
+ 
+ import java.io.File;
+-import java.net.MalformedURLException;
+ import java.net.URL;
+ import java.rmi.RemoteException;
+ import java.text.ParseException;
+ import java.text.SimpleDateFormat;
+ 
+-import com.greenlight.rqAdapter.adapter.extraction.IGenericResQAdapter;
+ import com.greenlight.rqAdapter.dao.GenericDbDao;
+ import com.greenlight.rqAdapter.dao.SysSettingDAO;
+ import com.greenlight.rqAdapter.dao.SystemDAO;
+@@ -27,9 +25,7 @@
+ import com.greenlight.service.resq.MapClass;
+ import com.greenlight.service.resq.RoleSyncFilters;
+ import com.greenlight.service.resq.RoleSyncOutput;
+-import com.greenlight.service.resq.TemplateActivateFilters;
+ import com.greenlight.service.resq.UserRoleFilters;
+-import com.greenlight.service.resq.UserRoleOutput;
+ import com.greenlight.service.resq.UserSyncFilters;
+ import com.greenlight.service.resq.UserSyncOutput;
+ 

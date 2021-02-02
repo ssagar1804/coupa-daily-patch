@@ -1,0 +1,98 @@
+Index: showUserActvtTmplRpt.jsp
+===================================================================
+--- showUserActvtTmplRpt.jsp	(revision 7375)
++++ showUserActvtTmplRpt.jsp	(revision 7376)
+@@ -1727,8 +1727,8 @@
+ function insertFilter() {
+ 	var table = document.getElementById("Table1");
+ 	var row = table.insertRow();
+-	let event = null;
+-	let selectTobeModifiedBasedOnSelection= null;
++	var event = null;
++	var selectTobeModifiedBasedOnSelection= null;
+ 	<% Object[] selectedValues = {},selectedFilters = {};
+ 	Map filtersMap = userActvtTmplRptForm.getUserDefFilters();
+ 	Map filtersDataMap = userActvtTmplRptForm.getUserDefFilterData();
+@@ -1805,14 +1805,11 @@
+ 		     }
+ 		    cell2.appendChild(element2);
+ 	<%}for(int k=0 ; k<Keys.length ; k++){%>
+-		//event = new Event('change');
+ 		selectTobeModifiedBasedOnSelection=document.getElementById('<%=Keys[k]%>');
+ 		if(selectTobeModifiedBasedOnSelection){
+ 			$(selectTobeModifiedBasedOnSelection).trigger('change');
+-			//selectTobeModifiedBasedOnSelection.dispatchEvent(event);
+ 			<%for (int j = 0; j < selectedValues.length; j++) {%>
+ 	        if('null'!='<%=selectedValues[j]%>' & '<%=selectedFilters[j]%>'=='<%= Keys[k] %>'){
+-				console.log('<%=selectedValues[j]%>');
+ 				selectTobeModifiedBasedOnSelection.value='<%=selectedValues[j]%>';
+ 	        }
+ 	     <%}%>
+@@ -1841,20 +1838,20 @@
+ function fetchAndUpdateUserDefDropDown(dependentParentFilter ,dependentParentFilterValue ,
+ 									   dependentChildFilter, selectedValue ){
+ 	if(dependentParentFilter && dependentChildFilter){
+-	 let xmlhttp=GetXmlHttpObject();
++	 var xmlhttp=GetXmlHttpObject();
+ 	 
+ 	 if(!dependentParentFilterValue && selectedValue!='null'){
+ 		 dependentParentFilterValue = selectedValue;
+ 	 }
+ 	 
+-	 let url = 'getDependentDropDown.do?dependentParentFilter='+dependentParentFilter
++	 var url = 'getDependentDropDown.do?dependentParentFilter='+dependentParentFilter
+ 			+'&dependentParentFilterValue='+dependentParentFilterValue
+ 			+'&dependentChildFilter='+dependentChildFilter;
+ 	 
+ 	 xmlhttp.onreadystatechange = function() {
+ 		if (this.readyState == 4 && this.status == 200) {
+ 		 if(xmlhttp.responseText){
+-		 	let dependentValues = JSON.parse(xmlhttp.responseText);
++		 	var dependentValues = JSON.parse(xmlhttp.responseText);
+ 		 	clearPreviousAndAppendNewOptions(dependentChildFilter,dependentValues);
+ 		 }
+ 		}
+@@ -1866,38 +1863,34 @@
+    }
+ 	
+    function clearPreviousAndAppendNewOptions(dependentChildFilter,dependentValues){
+-	   let dependentChildFilterElement = document.getElementById(dependentChildFilter);
++	   var dependentChildFilterElement = document.getElementById(dependentChildFilter);
+ 	   removePrevious(dependentChildFilterElement);
+-	   appendNew(dependentChildFilterElement , dependentValues,dependentChildFilter);
++	   appendNew(dependentChildFilterElement,dependentValues);
+    }
+    
+    function removePrevious(dependentChildFilterElement){
+ 	   var length = dependentChildFilterElement.options.length;
+-	   for (let i = length-1; i >= 0; i--) {
++	   for (var i = length-1; i >= 0; i--) {
+ 		   dependentChildFilterElement.options[i] = null;
+ 	   }
+    }
+    
+    function appendNew(dependentChildFilterElement , dependentValues){
+-	   let option = document.createElement("option");
++	   var option = document.createElement("option");
+ 	   option.value = "";
+ 	   option.innerHTML = "-- Select --";
+ 	   dependentChildFilterElement.appendChild(option);
+ 	   
+-	   for(let i=0  ; i<dependentValues.length ; i++){
++	   for(var i=0  ; i<dependentValues.length ; i++){
+ 		 option = document.createElement("option");
+ 		 option.value = dependentValues[i];
+ 		 option.innerHTML = dependentValues[i];
+ 		 dependentChildFilterElement.appendChild(option);
+ 	   }
+-	   //Need to fire event forcibly as auto change is not getting fired even if dropdown is altered
+-	   //let event = new Event('change');
+-	   //dependentChildFilterElement.dispatchEvent(event);
+    }
+ }
+ 
+ $('html').on('change' , '.list_menu_drop_down_wide' ,function(){
+-	//console.log('this.id,this.value =='+this.id+'---|'+this.value+'|--'+this.getAttribute('data-dependent'));
+ 	fetchAndUpdateUserDefDropDown(this.id,this.value,this.getAttribute('data-dependent'),
+ 			this.getAttribute('data-dependent-selected'));
+ });
