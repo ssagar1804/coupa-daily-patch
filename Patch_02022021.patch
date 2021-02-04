@@ -1,0 +1,31 @@
+Index: com/greenlight/rta10/executionpoints/impl/RTA10COUPAAPIGEEImpl.java
+===================================================================
+--- com/greenlight/rta10/executionpoints/impl/RTA10COUPAAPIGEEImpl.java	(revision 10629)
++++ com/greenlight/rta10/executionpoints/impl/RTA10COUPAAPIGEEImpl.java	(revision 10630)
+@@ -731,12 +731,20 @@
+ 			}
+ 			FLATFILE_TEXTConnectionImpl connectionImpl = new FLATFILE_TEXTConnectionImpl();
+ 			connectionImpl.setConnector(tableXPAConnectors);
+-			ConnectionTestMessage connectionTestMessage = connectionImpl.testConnection(tableXPAConnectors);
+-			if (!connectionTestMessage.isTestConnectionStatus()) {
+-				retVal[1] = "Test connection failed::ConnectorName::" + tableXPAConnectors.getConnectorName()
+-						+ "::ConnectorId::" + tableXPAConnectors.getConnectorId();
+-				retVal[3] = XAppConstants.FAILURE_CODE_CONNECTOR_NOT_WORKING;
+-				return retVal;
++			for (int k = 0; k < 3; k++) {
++				ConnectionTestMessage connectionTestMessage = connectionImpl.testConnection(tableXPAConnectors);
++				if (!connectionTestMessage.isTestConnectionStatus()) {
++					_logger.debug("Retrying test connection: " + k);
++					Thread.sleep(2000);
++					if (k == 2) {
++						retVal[1] = "Test connection failed::ConnectorName::" + tableXPAConnectors.getConnectorName()
++								+ "::ConnectorId::" + tableXPAConnectors.getConnectorId();
++						retVal[3] = XAppConstants.FAILURE_CODE_CONNECTOR_NOT_WORKING;
++						return retVal;
++					}
++				}else {
++					break;
++				}
+ 			}
+ 			// SFTP Key and FTP(non-secure) Connection is closed in test
+ 			// connection method.Therefore it is opened again.

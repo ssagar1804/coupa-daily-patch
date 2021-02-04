@@ -1,0 +1,36 @@
+Index: source/com/greenlight/rqAdapter/scheduler/Scheduler.java
+===================================================================
+--- source/com/greenlight/rqAdapter/scheduler/Scheduler.java	(revision 7376)
++++ source/com/greenlight/rqAdapter/scheduler/Scheduler.java	(revision 7377)
+@@ -1353,6 +1353,9 @@
+ 					String subject = XAppConstants.BLANK_STRING;
+ 					// Send email to resq admin. CC to template owner.
+ 					
++					List multipleErrorCc = new ArrayList();
++					multipleErrorCc.addAll(multipleCc);
++					
+ 					//Add support emails in case of failure
+ 					String includeSupportMail = XAppUtils.getFilePathForProp()
+ 							.getProperty(XAppConstants.INCLUDE_SUPPORT_EMAILS_ON_ASSIGNMENT_FAILURE_OPERATION);
+@@ -1360,10 +1363,10 @@
+ 							XAppConstants.INCLUDE_MAIL_LIST_TO_RECIPIENT_EMAIL_ASSIGNMENT_FAILURE_OPERATION);
+ 
+ 					if (XAppConstants.YES.equalsIgnoreCase(includeSupportMail)) {
+-						multipleCc.addAll(SystemDAO.getSupportEmails(obj.getSystemId()));
++						multipleErrorCc.addAll(SystemDAO.getSupportEmails(obj.getSystemId()));
+ 					}
+ 					if (XAppConstants.YES.equalsIgnoreCase(includeMailListToRecipient)) {
+-						multipleCc.add((String) mailList.get(9));
++						multipleErrorCc.add((String) mailList.get(9));
+ 					}
+ 					
+ 					if(isGlobal && (isProxy || isDelegate)) {
+@@ -1378,7 +1381,7 @@
+ 						content = getFFRoleFailedEmailContents(String.valueOf(mailList.get(2)), errorDesc, true);
+ 						subject = getFFRoleFailedEmailSubject(String.valueOf(mailList.get(1)), true);
+ 					}
+-					CommonMethodsDAO.sendMail(content, null, null, multipleTo, subject, multipleCc);
++					CommonMethodsDAO.sendMail(content, null, null, multipleTo, subject, multipleErrorCc);
+ 					_logger.debug("Error while assignment of proxy or delegate in ERP. Deactivating assignment.");
+ 				} if(successRolesList.size() > 0) { 
+ 					List ccList = null;

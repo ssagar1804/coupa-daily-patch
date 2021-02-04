@@ -1,0 +1,38 @@
+Index: Scheduler.java
+===================================================================
+--- Scheduler.java	(revision 7366)
++++ Scheduler.java	(revision 7367)
+@@ -1721,7 +1721,7 @@
+ 			List successRolesList, List output, Locale locale, boolean isProxy, boolean isDelegate, List roleList, 
+ 			Integer rqUserTmplId, Integer rqUserId, Integer rqSystemId, boolean isAssign) {
+ 		String errorDesc = XAppConstants.BLANK_STRING;
+-		if(output != null && output.size() > 0) {			
++		if(output != null) {			
+ 			for (int i = 0; i < output.size(); i++) {
+ 				UserRoleOutput userRoleOutput = (UserRoleOutput) output.get(i);
+ 				if(XAppConstants.ROLE_ASSIGNED_STATUS_ERROR.equalsIgnoreCase(userRoleOutput.getUserRole().getSuccessFlag())) {
+@@ -1732,13 +1732,19 @@
+ 					successRolesList.add(userRoleOutput.getUserRole().getRole());
+ 				}
+ 				if(roleList != null) {
+-					TableRQRoles tableRQRoles = (TableRQRoles) roleList.get(i);
+-					if(isAssign) {
+-						insertTmplAsgnedRoles(tableRQRoles, userRoleOutput.getUserRole(), rqUserTmplId, rqUserId, rqSystemId);
+-					} else {
+-						updateTmplUnAsgnedRoles(tableRQRoles, userRoleOutput.getUserRole(), rqUserTmplId, rqUserId, rqSystemId);
++				for (int j = 0; j < roleList.size(); j++) {
++					TableRQRoles tableRQRoles = (TableRQRoles) roleList.get(j);
++					if (tableRQRoles.getRoleName()!=null && tableRQRoles.getRoleName().equalsIgnoreCase(userRoleOutput.getUserRole().getRole())) {
++						if (isAssign) {
++							insertTmplAsgnedRoles(tableRQRoles, userRoleOutput.getUserRole(), rqUserTmplId,
++									rqUserId, rqSystemId);
++						} else {
++							updateTmplUnAsgnedRoles(tableRQRoles, userRoleOutput.getUserRole(), rqUserTmplId,
++									rqUserId, rqSystemId);
++						}
+ 					}
+ 				}
++			  }
+ 			}
+ 		}
+ 		return errorDesc.trim();
