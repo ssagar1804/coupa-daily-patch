@@ -1,0 +1,231 @@
+Index: DB_Script/Default/RESQ_INIT_ORCL.sql
+===================================================================
+--- DB_Script/Default/RESQ_INIT_ORCL.sql	(revision 7332)
++++ DB_Script/Default/RESQ_INIT_ORCL.sql	(working copy)
+@@ -70,6 +70,7 @@
+ INSERT INTO GLT_RQ_SEQUENCES(TABLE_NAME, LAST_SEQUENCE_NO)VALUES ('GLT_RQ_WF_CND_VAL',2000);
+ INSERT INTO GLT_RQ_SEQUENCES(TABLE_NAME, LAST_SEQUENCE_NO)VALUES ('GLT_RQ_WF_CND_RSK',2000);
+ INSERT INTO  GLT_RQ_SEQUENCES (TABLE_NAME, LAST_SEQUENCE_NO) VALUES ('GLT_RQ_HIS_MITIWS', 1); 
++INSERT INTO GLT_RQ_SEQUENCES(TABLE_NAME, LAST_SEQUENCE_NO) VALUES ('GLT_RQ_DOWNLOADS', 1);
+ 
+ END LOOP;
+ COMMIT;
+Index: DB_Script/Default/RESQ_ORCL.sql
+===================================================================
+--- DB_Script/Default/RESQ_ORCL.sql	(revision 7332)
++++ DB_Script/Default/RESQ_ORCL.sql	(working copy)
+@@ -2813,3 +2813,31 @@
+ 
+ ALTER TABLE GLT_RQ_STATUS 
+ ADD ROLE_OWNER_APPROVAL varchar2(2) DEFAULT 'N';
++
++CREATE TABLE GLT_RQ_DOWNLOADS
++(   
++    DETAIL_ID NUMBER(10,0) NOT NULL,
++    RQ_SYSTEM_ID NUMBER(10) NOT NULL,
++    REPORT_NAME NVARCHAR2(100),
++    FILE_SIZE DECIMAL(10,2),
++    STATUS NVARCHAR2(10),
++    CREATED_BY NVARCHAR2(50),
++    CREATION_DATE_TIME DATE,
++    START_DATE_TIME DATE,
++    END_DATE_TIME DATE,
++    ZIP_FILE_NAME NVARCHAR2(100),
++    USER_DEF_01 NVARCHAR2(100),
++    USER_DEF_02 NVARCHAR2(100),
++    USER_DEF_03 NVARCHAR2(100),
++    USER_DEF_04 NVARCHAR2(100),
++    USER_DEF_05 NVARCHAR2(100)
++  )
++LOGGING
++NOCOMPRESS
++NOCACHE
++NOPARALLEL
++MONITORING;
++ 
++ALTER TABLE GLT_RQ_DOWNLOADS
++ADD CONSTRAINT GLT_RQ_DOWNLOADS_PK
++PRIMARY KEY (DETAIL_ID);
+\ No newline at end of file
+Index: source/com/greenlight/rqAdapter/ui/actions/resqActions/UserActivityDownloadThread.java
+===================================================================
+--- source/com/greenlight/rqAdapter/ui/actions/resqActions/UserActivityDownloadThread.java	(revision 7332)
++++ source/com/greenlight/rqAdapter/ui/actions/resqActions/UserActivityDownloadThread.java	(working copy)
+@@ -39,7 +39,7 @@
+ 				XAppUtils.getNullableString(userActvtTmplRptForm.getRoleName()),
+ 				userActvtTmplRptForm.getStartDate(), userActvtTmplRptForm.getEndDate(), userActvtTmplRptForm.getRqSystemId(),userActvtTmplRptForm.getStatusList(),userActvtTmplRptForm.getUserType(),userActvtTmplRptForm.getUserDefFilterData(), 
+ 				userActvtTmplRptForm.getSortByColumn(), userActvtTmplRptForm.getSortBy(), userActvtTmplRptForm.getLoggedUser(),userActvtTmplRptForm.isOldValNewValDataPresent(),showSensitiveData,"",userActvtTmplRptForm.getSelectedLogIds(),userActvtTmplRptForm.getRequestId(),userActvtTmplRptForm.getReasonCd(),fetchClob,userActvtTmplRptForm.getAgeOfActivity(),userActvtTmplRptForm.getFetchReportFrom());
+-		Date st=Calendar.getInstance().getTime();
++		Date st=new Date();
+ 		UserActvtTmplRptDAO.getXLSDownloadReport(list, userActvtTmplRptForm.getUserDefColHeadings(), userActvtTmplRptForm.getUserDefCols(), userActvtTmplRptForm.getRqSystemId(),
+ 				locale, os,userActvtTmplRptForm.isOldValNewValDataPresent(),userActvtTmplRptForm,showSensitiveData,absfilePath);
+ 		_logger.debug("downloadThread run method finished.Start Time:"+st+",End Time:"+Calendar.getInstance().getTime());
+Index: source/com/greenlight/rqAdapter/ui/actions/resqActions/UserActvtTmplRptAction.java
+===================================================================
+--- source/com/greenlight/rqAdapter/ui/actions/resqActions/UserActvtTmplRptAction.java	(revision 7336)
++++ source/com/greenlight/rqAdapter/ui/actions/resqActions/UserActvtTmplRptAction.java	(working copy)
+@@ -23,6 +23,7 @@
+ import javax.servlet.http.HttpServletResponse;
+ 
+ import org.apache.commons.io.IOUtils;
++import org.apache.commons.lang3.StringUtils;
+ import org.apache.log4j.Logger;
+ 
+ import com.google.gson.Gson;
+@@ -133,6 +134,13 @@
+ 				userActvtTmplRptForm.setUserDefFilters(new TreeMap());//reset
+ 				userActvtTmplRptForm.setUserDefFilterData(new TreeMap());//reset
+ 				
++				String allowDownloadThroughLegacyApproach = 
++						XAppUtils.getFilePathForProp().getProperty(XAppConstants.ALLOW_DOWNLOAD_THROUGH_LEGACY_PROCESS);
++				userActvtTmplRptForm.setAllowDownloadThroughLegacyProcess("Y");
++				if(StringUtils.isNotBlank(allowDownloadThroughLegacyApproach)) {
++					userActvtTmplRptForm.setAllowDownloadThroughLegacyProcess(allowDownloadThroughLegacyApproach);
++				}
++				
+ 				//to show reasoncode or ffidcomments 
+ 				boolean isResonCodeDisply=XAppUtils.isPropertyDisplayForSystem(XAppConstants.SHOW_REASONCODE_IN_SYSTEM,loggedUser.getSystemId());
+ 				if(isResonCodeDisply){
+@@ -513,7 +521,10 @@
+ 				request.setAttribute("fileName", absfilePath);
+ 				return actionDetails.getReturnPage("showProcessingProgess") ;
+ 		
+-			}else if( actionDetails.getActionId().trim().equalsIgnoreCase("downloadTmplAss2.do"))
++			}else if("processUARprtGeneration.do".equalsIgnoreCase(actionDetails.getActionId().trim())) {
++				return actionDetails.getReturnPage("showProcessingProgess") ;
++			}			
++			else if( actionDetails.getActionId().trim().equalsIgnoreCase("downloadTmplAss2.do"))
+ 			{
+ 				String absfilePath=request.getParameter("fileName");
+ 				File file = new File(absfilePath);
+Index: source/com/greenlight/rqAdapter/ui/forms/resqForms/UserActvtTmplRptForm.java
+===================================================================
+--- source/com/greenlight/rqAdapter/ui/forms/resqForms/UserActvtTmplRptForm.java	(revision 7336)
++++ source/com/greenlight/rqAdapter/ui/forms/resqForms/UserActvtTmplRptForm.java	(working copy)
+@@ -140,6 +140,7 @@
+ 	private String fetchReportFrom="";
+ 	
+ 	private Map userDefFiltersDependent = new TreeMap();
++	private String allowDownloadThroughLegacyProcess;
+ 	
+ 	public String getRoleName() {
+ 		return roleName;
+@@ -1173,4 +1174,15 @@
+ 	public void setStatusList(List statusList) {
+ 		this.statusList = statusList;
+ 	}
++
++	public String getAllowDownloadThroughLegacyProcess() {
++		return allowDownloadThroughLegacyProcess;
++	}
++
++	public void setAllowDownloadThroughLegacyProcess(String allowDownloadThroughLegacyProcess) {
++		this.allowDownloadThroughLegacyProcess = allowDownloadThroughLegacyProcess;
++	}
++	
++	
++	
+ }
+\ No newline at end of file
+Index: source/com/greenlight/rqAdapter/utils/XAppConstants.java
+===================================================================
+--- source/com/greenlight/rqAdapter/utils/XAppConstants.java	(revision 7349)
++++ source/com/greenlight/rqAdapter/utils/XAppConstants.java	(working copy)
+@@ -997,4 +997,9 @@
+ 	public static final String SUPPORT_EMAILID ="SUPPORT_EMAILID";
+ 	public static final String INCLUDE_SUPPORT_EMAILS_ON_ASSIGNMENT_FAILURE_OPERATION="include.support.emails.on.assignment.failure.operation";
+ 	public static final String INCLUDE_MAIL_LIST_TO_RECIPIENT_EMAIL_ASSIGNMENT_FAILURE_OPERATION="include.mail.list.to.recipient.email.assignment.failure.operation";
++
++	//Added for US-160 Download user activity report from frontend
++	public static final String ALLOW_DOWNLOAD_THROUGH_LEGACY_PROCESS="allow.download.through.legacy.process";
++	public static final String USER_ACTIVITY_DOWNLOADED_FILES_PATH= "user.activity.downloaded.files.path";
++
+ }
+Index: source/config/appNavigationConfig.xml
+===================================================================
+--- source/config/appNavigationConfig.xml	(revision 7336)
++++ source/config/appNavigationConfig.xml	(working copy)
+@@ -810,6 +810,11 @@
+ 			<RETURN_PAGE ID="SUCCESS" PAGE="/successPage.jsp" />	 			 
+ 			<RETURN_PAGE ID="ERROR" PAGE="/errorPage.jsp" />	 
+ 		</NAVIGATION>
++		<NAVIGATION  SCREEN_ID="RESQ_USERACTVT_REPORT_5"  ACTION_ID="processUARprtGeneration.do"  ACTION_CLASS="com.greenlight.rqAdapter.ui.actions.resqActions.UserActvtTmplRptAction">
++			<RETURN_PAGE ID="showProcessingProgess" PAGE="/jsp/resqJsp/processingProgess.jsp" />
++			<RETURN_PAGE ID="SUCCESS" PAGE="/successPage.jsp" />	 			 
++			<RETURN_PAGE ID="ERROR" PAGE="/errorPage.jsp" />	 
++		</NAVIGATION>
+ 		<NAVIGATION  SCREEN_ID="RESQ_USERACTVT_REPORT_REVIEW1"  ACTION_ID="showReviewWindow.do"  ACTION_CLASS="com.greenlight.rqAdapter.ui.actions.resqActions.UserActvtTmplRptAction">
+ 			<RETURN_PAGE ID="showReviewWindow" PAGE="/jsp/resqJsp/saveReview.jsp" />			
+ 			<RETURN_PAGE ID="SUCCESS" PAGE="/successPage.jsp" />	 			 
+Index: source/config/xplatformConfig.xml
+===================================================================
+--- source/config/xplatformConfig.xml	(revision 7332)
++++ source/config/xplatformConfig.xml	(working copy)
+@@ -1,7 +1,7 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <xplatformConfg>
+ 	<user_security>
+-		<authentication>UME</authentication>
++		<authentication>Native</authentication>
+ 	</user_security>
+ 	<external_vendor>
+ 		<vendorname>SAPGRC</vendorname>
+Index: source/resq_application.properties
+===================================================================
+--- source/resq_application.properties	(revision 7354)
++++ source/resq_application.properties	(working copy)
+@@ -93,7 +93,7 @@
+ SAML.USE.EMAIL.PREFIX.TO.CREATE.USERNAME=N
+ auto_create_manager=Y
+ 
+-rtads.servlet.url=http://localhost:50000/xPlatformAdapter/
++rtads.servlet.url=http://localhost:8080/RTADS2.0_SP05/
+ 
+ send.different.application.url.in.mail=N
+ different.application.url=http://localhost:7080/OtherThanResQApplication/
+@@ -119,3 +119,7 @@
+ #VES-163 ResQ - Email Notification to support for Assignment/Unassignment Failure
+ include.support.emails.on.assignment.failure.operation=Y
+ include.mail.list.to.recipient.email.assignment.failure.operation=Y
++
++#VES 160 Properties for user activity new download functionality
++allow.download.through.legacy.process=N
++user.activity.downloaded.files.path=/home/sagar/Documents/Greenlight/VES160/user_activity_files
+Index: webContent/jsp/resqJsp/showUserActvtTmplRpt.jsp
+===================================================================
+--- webContent/jsp/resqJsp/showUserActvtTmplRpt.jsp	(revision 7376)
++++ webContent/jsp/resqJsp/showUserActvtTmplRpt.jsp	(working copy)
+@@ -121,7 +121,7 @@
+ 	 String auditType = SystemDAO.getAuditType(userActvtTmplRptForm.getRqSystemId().intValue());
+ 		String sortByColumn = userActvtTmplRptForm.getSortByColumn();
+ 		String sortBy = userActvtTmplRptForm.getSortBy();
+-	
++		String allowDownloadThroughLegacyProcess=userActvtTmplRptForm.getAllowDownloadThroughLegacyProcess();	
+ 		java.util.List list=userActvtTmplRptForm.getDisplayList();
+ 		String disableButton="disabled";
+ 		int numberOfRecordsPerPage;
+@@ -155,6 +155,7 @@
+ 	<input type="hidden" name="numberOfRec" value="<%=numberOfRecordsPerPage%>" >
+ 	<input type="hidden" name="alertId" value="<%=alertId%>" >
+ 	<input type="hidden" name="fileName" id="fileName" >
++	<input type="hidden" name="allowDownloadThroughLegacyProcess" id="allowDownloadThroughLegacyProcess" value="<%=allowDownloadThroughLegacyProcess%>">
+ 	<%
+ 
+ 	 java.util.Date serverCal=new java.util.Date();
+@@ -1436,8 +1437,14 @@
+ 	        +"&resqOwner="+document.forms[0].resqOwner.value
+ 	        +"&startDate="+document.forms[0].startDate.value+"&endDate="+document.forms[0].endDate.value
+ 	        +"&fetchClobData="+document.forms[0].fetchClobData.value+"&fetchReportFrom="+fetchReportValue;
+-			var actionPath='downloadTmplAss1.do?'+str;
+-			openPopup (actionPath, 'downloadreport', '<%= I18nUtil.getString(USER_LOCALE, "RESQ.LEFTNAV.RESQ.ADMIN.REPORTS.USER.ACT.REPORT") %>', 250, 650) ;
++			if(document.forms[0].allowDownloadThroughLegacyProcess.value=='Y'){
++				var actionPath='downloadTmplAss1.do?'+str;
++				openPopup (actionPath, 'downloadreport', '<%= I18nUtil.getString(USER_LOCALE, "RESQ.LEFTNAV.RESQ.ADMIN.REPORTS.USER.ACT.REPORT") %>', 250, 650) ;
++			}else{
++				var actionPath='processUARprtGeneration.do?'+str;
++				openPopup (actionPath, 'downloadreport', '<%= I18nUtil.getString(USER_LOCALE, "RESQ.LEFTNAV.RESQ.ADMIN.REPORTS.USER.ACT.REPORT") %>', 250, 650) ;
++			}
++			
+ 			return false;
+ 		}
+ 		else if( operation == 'EDIT' ){ 	
