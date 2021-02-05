@@ -47,6 +47,250 @@ Index: DB_Script/Default/RESQ_ORCL.sql
 +ADD CONSTRAINT GLT_RQ_DOWNLOADS_PK
 +PRIMARY KEY (DETAIL_ID);
 \ No newline at end of file
+Index: source/MessagesBundle_en.properties
+===================================================================
+--- source/MessagesBundle_en.properties	(revision 7332)
++++ source/MessagesBundle_en.properties	(working copy)
+@@ -2066,4 +2066,7 @@
+ RESQ.FF.USER.ID=FF User Id
+ FF.USER.NAME=FF User Name
+ RESQ.OWNER.NAME=Owner Name
+-RESQ.REVIEWER.NAME=Reviewer Name
+\ No newline at end of file
++RESQ.REVIEWER.NAME=Reviewer Name
++
++USER.ACTIVITY.REPORT.NAME=Report Name
++
+Index: source/com/greenlight/rqAdapter/dao/resqDAO/UserActvtTmplRptDAO.java
+===================================================================
+--- source/com/greenlight/rqAdapter/dao/resqDAO/UserActvtTmplRptDAO.java	(revision 7379)
++++ source/com/greenlight/rqAdapter/dao/resqDAO/UserActvtTmplRptDAO.java	(working copy)
+@@ -3456,5 +3456,224 @@
+ 		return dependentList;
+ 	}
+ 
++	
++	public static void generateXLSDownloadReportAndStoreInTheGivenPath(List data, List heading, List values,
++			Integer systemId, Locale locale, OutputStream os, boolean isOldValNewValDataPresent,
++			UserActvtTmplRptForm userActvtTmplRptForm, boolean showSensitiveData, String absfilePath) {
++		_logger.info("UserActvtTmplRptDAO:: Start of  getXLSDownloadReport");
++		ResultSet rs = (ResultSet) data.get(0);
++		PreparedStatement statement = (PreparedStatement) data.get(1);
++		XAppConnection xAppConnection = (XAppConnection) data.get(2);
++		WorkbookSettings ws = null;
++		WritableWorkbook workbook = null;
++		try {
++			ws = new WorkbookSettings();
++			ws.setLocale(locale);
++			workbook = Workbook.createWorkbook(os, ws);
++
++			String systemName = SystemDAO.getSystemNameFromId(systemId);
++			boolean isIdBasedSystem = XAppUtils.isIdBasedApproach(systemId);
++			boolean showReasonCode = XAppUtils.isPropertyDisplayForSystem(XAppConstants.SHOW_REASONCODE_IN_SYSTEM,
++					systemId);
++			boolean showFFIDComment = XAppUtils.isPropertyDisplayForSystem(XAppConstants.SHOW_COMMENTS_IN_SYSTEM,
++					systemId);
++			boolean hideReviewComments = Boolean
++					.valueOf(SystemDAO.getSystemParamValue(XAppConstants.SYS_PARAM_HIDE_REVIEW_COMMENTS, systemId));
++			boolean hideDetails = Boolean
++					.valueOf(SystemDAO.getSystemParamValue(XAppConstants.SYS_PARAM_HIDE_CLOB, systemId));
++
++			String USER_DEF_01 = "", USER_DEF_02 = "", USER_DEF_03 = "", USER_DEF_04 = "", USER_DEF_05 = "",
++					USER_DEF_06 = "", USER_DEF_07 = "", USER_DEF_08 = "", USER_DEF_09 = "", USER_DEF_10 = "",
++					USER_DEF_11 = "", USER_DEF_12 = "", USER_DEF_13 = "", USER_DEF_14 = "", USER_DEF_15 = "";
++			Map filterData = userActvtTmplRptForm.getUserDefFilterData();
++			if (userActvtTmplRptForm.getUserDefFilterData() != null && filterData.size() > 0) {
++				Object[] Keys = filterData.keySet().toArray();
++				for (int i = 0; i < Keys.length; i++) {
++					String key = (String) Keys[i];
++					String value = (String) filterData.get((String) Keys[i]);
++					if ("USER_DEF_01".equals(key)) {
++						USER_DEF_01 = value;
++					} else if ("USER_DEF_02".equals(key)) {
++						USER_DEF_02 = value;
++					} else if ("USER_DEF_03".equals(key)) {
++						USER_DEF_03 = value;
++					} else if ("USER_DEF_04".equals(key)) {
++						USER_DEF_04 = value;
++					} else if ("USER_DEF_05".equals(key)) {
++						USER_DEF_05 = value;
++					} else if ("USER_DEF_06".equals(key)) {
++						USER_DEF_06 = value;
++					} else if ("USER_DEF_07".equals(key)) {
++						USER_DEF_07 = value;
++					} else if ("USER_DEF_08".equals(key)) {
++						USER_DEF_08 = value;
++					} else if ("USER_DEF_09".equals(key)) {
++						USER_DEF_09 = value;
++					} else if ("USER_DEF_10".equals(key)) {
++						USER_DEF_10 = value;
++					} else if ("USER_DEF_11".equals(key)) {
++						USER_DEF_11 = value;
++					} else if ("USER_DEF_12".equals(key)) {
++						USER_DEF_12 = value;
++					} else if ("USER_DEF_13".equals(key)) {
++						USER_DEF_13 = value;
++					} else if ("USER_DEF_14".equals(key)) {
++						USER_DEF_14 = value;
++					} else if ("USER_DEF_15".equals(key)) {
++						USER_DEF_15 = value;
++					}
++				}
++			}
++			String _tempName = CommonMethodsDAO.getDescrForCaseInsensitivity(userActvtTmplRptForm.getTempName());
++			String _roleName = CommonMethodsDAO.getDescrForCaseInsensitivity(userActvtTmplRptForm.getRoleName());
++			String _resqUser = CommonMethodsDAO.getDescrForCaseInsensitivity(userActvtTmplRptForm.getResqUser());
++			String _resqOwnr = CommonMethodsDAO.getDescrForCaseInsensitivity(userActvtTmplRptForm.getResqOwner());
++			String _requestId = CommonMethodsDAO.getDescrForCaseInsensitivity(userActvtTmplRptForm.getRequestId());
++			String _userDef_01 = CommonMethodsDAO.getDescrForCaseInsensitivity(USER_DEF_01);
++			String _userDef_02 = CommonMethodsDAO.getDescrForCaseInsensitivity(USER_DEF_02);
++			String _userDef_03 = CommonMethodsDAO.getDescrForCaseInsensitivity(USER_DEF_03);
++			String _userDef_04 = CommonMethodsDAO.getDescrForCaseInsensitivity(USER_DEF_04);
++			String _userDef_05 = CommonMethodsDAO.getDescrForCaseInsensitivity(USER_DEF_05);
++			String _userDef_06 = CommonMethodsDAO.getDescrForCaseInsensitivity(USER_DEF_06);
++			String _userDef_07 = CommonMethodsDAO.getDescrForCaseInsensitivity(USER_DEF_07);
++			String _userDef_08 = CommonMethodsDAO.getDescrForCaseInsensitivity(USER_DEF_08);
++			String _userDef_09 = CommonMethodsDAO.getDescrForCaseInsensitivity(USER_DEF_09);
++			String _userDef_10 = CommonMethodsDAO.getDescrForCaseInsensitivity(USER_DEF_10);
++			String _userDef_11 = CommonMethodsDAO.getDescrForCaseInsensitivity(USER_DEF_11);
++			String _userDef_12 = CommonMethodsDAO.getDescrForCaseInsensitivity(USER_DEF_12);
++			String _userDef_13 = CommonMethodsDAO.getDescrForCaseInsensitivity(USER_DEF_13);
++			String _userDef_14 = CommonMethodsDAO.getDescrForCaseInsensitivity(USER_DEF_14);
++			String _userDef_15 = CommonMethodsDAO.getDescrForCaseInsensitivity(USER_DEF_15);
++
++			WritableSheet s1 = workbook.createSheet(I18nUtil.getString(locale, "RESQ.USER.ACTIVITY"), 0);
++			WritableSheet s2 = workbook.createSheet(I18nUtil.getString(locale, "RESQ.TEMPLATE.ACTIVATION"), 1);
++			WritableSheet s3 = workbook.createSheet(I18nUtil.getString(locale, "RESQ.TEMPLATE.ROLE.DETAILS"), 3);
++			WritableSheet s4 = workbook.createSheet(I18nUtil.getString(locale, "CROSSAPP.USER.DETAILS"), 4);
++
++			createXLSDataForUserActvtyHeader(systemId, heading, values, s1, locale, isOldValNewValDataPresent,
++					isIdBasedSystem, showReasonCode, showFFIDComment, hideReviewComments, hideDetails);
++			createXLSDataForTmplActivationHeader(systemId, s2, locale);
++			createXLSDataForRoleDetailsHeader(systemId, s3, locale);
++			createXLSDataForUserDetailsHeader(systemId, s4, locale);
++
++			int row = 1;
++			while ((rs != null && rs.next()) && row <= XAppConstants.BATCH_UPDATE_SIZE) {
++				if (CommonMethodsDAO.getAddToListFlag(_tempName, userActvtTmplRptForm.getTempName(),
++						rs.getString("TMPL_NAME"))
++						&& CommonMethodsDAO.getAddToListFlag(_roleName, userActvtTmplRptForm.getRoleName(),
++								rs.getString("ROLE_NAME"))
++						&& CommonMethodsDAO.getAddToListFlag(_resqUser, userActvtTmplRptForm.getResqUser(),
++								rs.getString("RESQ_USERID"))
++						&& CommonMethodsDAO.getAddToListFlag(_resqOwnr, userActvtTmplRptForm.getResqOwner(),
++								rs.getString("RESQ_OWNER"))
++						&& CommonMethodsDAO.getAddToListFlag(_requestId, userActvtTmplRptForm.getRequestId(),
++								rs.getString("REQUEST_ID"))
++						&& CommonMethodsDAO.getAddToListFlag(_userDef_01, USER_DEF_01, rs.getString("USER_DEF_01"))
++						&& CommonMethodsDAO.getAddToListFlag(_userDef_02, USER_DEF_02, rs.getString("USER_DEF_02"))
++						&& CommonMethodsDAO.getAddToListFlag(_userDef_03, USER_DEF_03, rs.getString("USER_DEF_03"))
++						&& CommonMethodsDAO.getAddToListFlag(_userDef_04, USER_DEF_04, rs.getString("USER_DEF_04"))
++						&& CommonMethodsDAO.getAddToListFlag(_userDef_05, USER_DEF_05, rs.getString("USER_DEF_05"))
++						&& CommonMethodsDAO.getAddToListFlag(_userDef_06, USER_DEF_06, rs.getString("USER_DEF_06"))
++						&& CommonMethodsDAO.getAddToListFlag(_userDef_07, USER_DEF_07, rs.getString("USER_DEF_07"))
++						&& CommonMethodsDAO.getAddToListFlag(_userDef_08, USER_DEF_08, rs.getString("USER_DEF_08"))
++						&& CommonMethodsDAO.getAddToListFlag(_userDef_09, USER_DEF_09, rs.getString("USER_DEF_09"))
++						&& CommonMethodsDAO.getAddToListFlag(_userDef_10, USER_DEF_10, rs.getString("USER_DEF_10"))
++						&& CommonMethodsDAO.getAddToListFlag(_userDef_11, USER_DEF_11, rs.getString("USER_DEF_11"))
++						&& CommonMethodsDAO.getAddToListFlag(_userDef_12, USER_DEF_12, rs.getString("USER_DEF_12"))
++						&& CommonMethodsDAO.getAddToListFlag(_userDef_13, USER_DEF_13, rs.getString("USER_DEF_13"))
++						&& CommonMethodsDAO.getAddToListFlag(_userDef_14, USER_DEF_14, rs.getString("USER_DEF_14"))
++						&& CommonMethodsDAO.getAddToListFlag(_userDef_15, USER_DEF_15, rs.getString("USER_DEF_15"))) {
++					if (XAppConstants.ALL.equals(userActvtTmplRptForm.getUserType())
++							|| rs.getString("USER_TYPE").equals(userActvtTmplRptForm.getUserType())) {
++						// do nothing
++					} else {
++						continue;
++					}
++					boolean ageFilter = false;
++					int age = calculateAgeOfActivity(
++							rs.getString("STATUS") == null ? XAppConstants.BLANK : rs.getString("STATUS"),
++							rs.getDate("CREATION_DATE"), rs.getDate("STAT_UPADATE"));
++					String ageOfActivity = userActvtTmplRptForm.getAgeOfActivity();
++					if (!ageOfActivity.equals("") || ageOfActivity == null) {
++						int ageOfAct = new Integer(ageOfActivity).intValue();
++						if (ageOfAct >= 0 && age >= ageOfAct) {
++							ageFilter = true;
++						}
++					}
++					if (ageOfActivity.equals("") || ageOfActivity == null) {
++						ageFilter = true;
++					}
++					List statusList = userActvtTmplRptForm.getStatusList();
++					if (((statusList != null && !statusList.contains("-1")
++							&& statusList.contains(rs.getString("STATUS") == null ? "" : rs.getString("STATUS")))
++							|| (statusList == null || statusList.contains("-1"))) && ageFilter) {
++						ArrayList userDefValues = new ArrayList();
++						userDefValues.add(rs.getString("USER_DEF_01"));
++						userDefValues.add(rs.getString("USER_DEF_02"));
++						userDefValues.add(rs.getString("USER_DEF_03"));
++						userDefValues.add(rs.getString("USER_DEF_04"));
++						userDefValues.add(rs.getString("USER_DEF_05"));
++						userDefValues.add(rs.getString("USER_DEF_06"));
++						userDefValues.add(rs.getString("USER_DEF_07"));
++						userDefValues.add(rs.getString("USER_DEF_08"));
++						userDefValues.add(rs.getString("USER_DEF_09"));
++						userDefValues.add(rs.getString("USER_DEF_10"));
++						userDefValues.add(rs.getString("USER_DEF_11"));
++						userDefValues.add(rs.getString("USER_DEF_12"));
++						userDefValues.add(rs.getString("USER_DEF_13"));
++						userDefValues.add(rs.getString("USER_DEF_14"));
++						userDefValues.add(rs.getString("USER_DEF_15"));
++
++						createXLSDataForUserActvty(systemId, rs, heading, values, s1, locale, isOldValNewValDataPresent,
++								row, userActvtTmplRptForm, showSensitiveData, userDefValues, systemName,
++								isIdBasedSystem, showReasonCode, showFFIDComment, hideReviewComments, hideDetails,
++								true);
++						createXLSDataForTmplActivation(systemId, rs, s2, locale, row, userDefValues);
++						createXLSDataForRoleDetails(systemId, rs, s3, locale, row, userDefValues);
++						createXLSDataForUserDetails(systemId, rs, s4, locale, row, userDefValues);
++						row++;
++					}
++				}
++			}
++		} catch (Exception e) {
++			e.printStackTrace();
++			XAppUtils.printStackTrace(e);
++			_logger.error("UserActvtTmplRptDAO :: getXLSDownloadReport :: error :: " + e.getMessage());
++			_logger.error("UserActvtTmplRptDAO :: getXLSDownloadReport :: error :: " + e.getStackTrace());
++			_logger.debug("UserActvtTmplRptDAO :: getXLSDownloadReport :: error :: " + e.getStackTrace());
++		} finally {
++			if (workbook != null) {
++				try {
++					workbook.write();
++				} catch (IOException e) {
++					e.printStackTrace();
++				}
++			}
++			if (workbook != null) {
++				try {
++					workbook.close();
++				} catch (WriteException e) {
++					e.printStackTrace();
++				} catch (IOException e) {
++					e.printStackTrace();
++				}
++			}
++			if (os != null) {
++				try {
++					os.close();
++				} catch (IOException e) {
++					e.printStackTrace();
++				}
++			}
++			_logger.debug("absfilePath:" + absfilePath);
++			if (!XAppUtils.isBlankOrNull(absfilePath)) {
++				File file = new File(absfilePath);
++				boolean renamed = file.renameTo(new File(absfilePath.substring(0, absfilePath.lastIndexOf("_"))));
++				_logger.debug("file renamed:" + renamed);
++			}
++			XAppUtils.closeOpenCursors(xAppConnection, statement, rs);
++		}
++		_logger.info("UserActvtTmplRptDAO:: Finished getXLSDownloadReport");
++	}
+ 
+ }
+\ No newline at end of file
 Index: source/com/greenlight/rqAdapter/ui/actions/resqActions/UserActivityDownloadThread.java
 ===================================================================
 --- source/com/greenlight/rqAdapter/ui/actions/resqActions/UserActivityDownloadThread.java	(revision 7332)
@@ -60,6 +304,71 @@ Index: source/com/greenlight/rqAdapter/ui/actions/resqActions/UserActivityDownlo
  		UserActvtTmplRptDAO.getXLSDownloadReport(list, userActvtTmplRptForm.getUserDefColHeadings(), userActvtTmplRptForm.getUserDefCols(), userActvtTmplRptForm.getRqSystemId(),
  				locale, os,userActvtTmplRptForm.isOldValNewValDataPresent(),userActvtTmplRptForm,showSensitiveData,absfilePath);
  		_logger.debug("downloadThread run method finished.Start Time:"+st+",End Time:"+Calendar.getInstance().getTime());
+Index: source/com/greenlight/rqAdapter/ui/actions/resqActions/UserActivityReportBackgroundPrepartionThread.java
+===================================================================
+--- source/com/greenlight/rqAdapter/ui/actions/resqActions/UserActivityReportBackgroundPrepartionThread.java	(revision 0)
++++ source/com/greenlight/rqAdapter/ui/actions/resqActions/UserActivityReportBackgroundPrepartionThread.java	(revision 0)
+@@ -0,0 +1,60 @@
++package com.greenlight.rqAdapter.ui.actions.resqActions;
++
++import java.io.OutputStream;
++import java.util.Date;
++import java.util.List;
++import java.util.Locale;
++
++import org.apache.log4j.Logger;
++
++import com.greenlight.rqAdapter.dao.resqDAO.UserActvtTmplRptDAO;
++import com.greenlight.rqAdapter.logs.Log;
++import com.greenlight.rqAdapter.ui.forms.resqForms.UserActvtTmplRptForm;
++import com.greenlight.rqAdapter.utils.XAppUtils;
++import com.ibm.icu.util.Calendar;
++
++public class UserActivityReportBackgroundPrepartionThread implements Runnable {
++
++	private static final Logger LOGGER = Log.getCustomLogger();
++	private OutputStream os;
++	private UserActvtTmplRptForm userActvtTmplRptForm;
++	private boolean showSensitiveData;
++	private String fetchClob;
++	private Locale locale;
++	private String absfilePath;
++
++	UserActivityReportBackgroundPrepartionThread(OutputStream os, UserActvtTmplRptForm userActvtTmplRptForm,
++			boolean showSensitiveData, String fetchClob, Locale locale, String absfilePath) {
++		this.os = os;
++		this.userActvtTmplRptForm = userActvtTmplRptForm;
++		this.showSensitiveData = showSensitiveData;
++		this.fetchClob = fetchClob;
++		this.locale = locale;
++		this.absfilePath = absfilePath;
++	}
++
++	@Override
++	public void run() {
++
++		LOGGER.debug("UserActivityReportBackgroundPrepartionThread run method started");
++		List list = UserActvtTmplRptDAO.getReportData(XAppUtils.getNullableString(userActvtTmplRptForm.getTempName()),
++				XAppUtils.getNullableString(userActvtTmplRptForm.getResqUser()),
++				XAppUtils.getNullableString(userActvtTmplRptForm.getResqOwner()),
++				XAppUtils.getNullableString(userActvtTmplRptForm.getRoleName()), userActvtTmplRptForm.getStartDate(),
++				userActvtTmplRptForm.getEndDate(), userActvtTmplRptForm.getRqSystemId(),
++				userActvtTmplRptForm.getStatusList(), userActvtTmplRptForm.getUserType(),
++				userActvtTmplRptForm.getUserDefFilterData(), userActvtTmplRptForm.getSortByColumn(),
++				userActvtTmplRptForm.getSortBy(), userActvtTmplRptForm.getLoggedUser(),
++				userActvtTmplRptForm.isOldValNewValDataPresent(), showSensitiveData, "",
++				userActvtTmplRptForm.getSelectedLogIds(), userActvtTmplRptForm.getRequestId(),
++				userActvtTmplRptForm.getReasonCd(), fetchClob, userActvtTmplRptForm.getAgeOfActivity(),
++				userActvtTmplRptForm.getFetchReportFrom());
++		Date st = new Date();
++		UserActvtTmplRptDAO.generateXLSDownloadReportAndStoreInTheGivenPath(list, userActvtTmplRptForm.getUserDefColHeadings(),
++				userActvtTmplRptForm.getUserDefCols(), userActvtTmplRptForm.getRqSystemId(), locale, os,
++				userActvtTmplRptForm.isOldValNewValDataPresent(), userActvtTmplRptForm, showSensitiveData, absfilePath);
++		LOGGER.debug("downloadThread run method finished.Start Time:" + st + ",End Time:"
++				+ Calendar.getInstance().getTime());
++
++	}
++}
 Index: source/com/greenlight/rqAdapter/ui/actions/resqActions/UserActvtTmplRptAction.java
 ===================================================================
 --- source/com/greenlight/rqAdapter/ui/actions/resqActions/UserActvtTmplRptAction.java	(revision 7336)
@@ -86,18 +395,50 @@ Index: source/com/greenlight/rqAdapter/ui/actions/resqActions/UserActvtTmplRptAc
  				//to show reasoncode or ffidcomments 
  				boolean isResonCodeDisply=XAppUtils.isPropertyDisplayForSystem(XAppConstants.SHOW_REASONCODE_IN_SYSTEM,loggedUser.getSystemId());
  				if(isResonCodeDisply){
-@@ -513,7 +521,10 @@
+@@ -513,7 +521,29 @@
  				request.setAttribute("fileName", absfilePath);
  				return actionDetails.getReturnPage("showProcessingProgess") ;
  		
 -			}else if( actionDetails.getActionId().trim().equalsIgnoreCase("downloadTmplAss2.do"))
 +			}else if("processUARprtGeneration.do".equalsIgnoreCase(actionDetails.getActionId().trim())) {
-+				return actionDetails.getReturnPage("showProcessingProgess") ;
++				String sortByColumn = request.getParameter("sortByColumn") ;
++				sortByColumn = ( sortByColumn == null ? "TEMPNAME" : sortByColumn ) ;
++				String sortBy = request.getParameter("sortBy") ;
++				sortBy = ( sortBy == null ? "ASC" : sortBy) ;		
++				UserActvtTmplRptForm userActvtTmplRptForm=(UserActvtTmplRptForm) request.getSession().getAttribute("UserActvtTmplRptForm") ;
++				userActvtTmplRptForm = ( userActvtTmplRptForm == null ? new UserActvtTmplRptForm() : userActvtTmplRptForm ) ;
++				userActvtTmplRptForm.setTempName((request.getParameter("tempName")==null?"":request.getParameter("tempName").trim())   );
++				userActvtTmplRptForm.setRoleName((request.getParameter("roleName")==null?"":request.getParameter("roleName").trim())   );
++				userActvtTmplRptForm.setResqUser((request.getParameter("resqUser")==null?"":request.getParameter("resqUser").trim())   );
++				userActvtTmplRptForm.setResqOwner((request.getParameter("resqOwner")==null?"":request.getParameter("resqOwner").trim())   );
++				userActvtTmplRptForm.setStartDate((request.getParameter("startDate")==null?"":request.getParameter("startDate").trim())   );
++				userActvtTmplRptForm.setEndDate((request.getParameter("endDate")==null?"":request.getParameter("endDate").trim())   );
++				String fetchClob=request.getParameter("fetchClobData")==null?"":request.getParameter("fetchClobData").trim();
++				userActvtTmplRptForm.setLoggedUser(loggedUser);
++				userActvtTmplRptForm.setRqSystemId(loggedUser.getSystemId());
++				userActvtTmplRptForm.setFetchReportFrom((request.getParameter("fetchReportFrom")==null?XAppConstants.FETCH_REPORT_DATA_CURRENT:request.getParameter("fetchReportFrom").trim()) );
++				_logger.debug("Inside UserActvtTmplRptAction processUARprtGeneration.do fetchReportFrom###:"+request.getParameter("fetchReportFrom"));
++				request.getSession().setAttribute("UserActvtTmplRptForm",userActvtTmplRptForm);
++				
++				return null ;
 +			}			
 +			else if( actionDetails.getActionId().trim().equalsIgnoreCase("downloadTmplAss2.do"))
  			{
  				String absfilePath=request.getParameter("fileName");
  				File file = new File(absfilePath);
+@@ -636,7 +666,11 @@
+ 					return actionDetails.getReturnPage("saveReviewRedirect") ;
+ 				}
+ 				
+-			}else if( actionDetails.getActionId().trim().equalsIgnoreCase("showDetails.do"))
++			}
++			else if( actionDetails.getActionId().trim().equalsIgnoreCase("showUserActvityReportDetails.do")){
++				return actionDetails.getReturnPage("showUserActvityReportDetailsWindow") ;
++			}
++			else if( actionDetails.getActionId().trim().equalsIgnoreCase("showDetails.do"))
+ 			{
+ 				UserActvtTmplRptForm userActvtTmplRptForm=(UserActvtTmplRptForm) request.getSession().getAttribute("UserActvtTmplRptForm") ;
+ 				userActvtTmplRptForm = ( userActvtTmplRptForm == null ? new UserActvtTmplRptForm() : userActvtTmplRptForm ) ;
 Index: source/com/greenlight/rqAdapter/ui/forms/resqForms/UserActvtTmplRptForm.java
 ===================================================================
 --- source/com/greenlight/rqAdapter/ui/forms/resqForms/UserActvtTmplRptForm.java	(revision 7336)
@@ -145,31 +486,29 @@ Index: source/config/appNavigationConfig.xml
 ===================================================================
 --- source/config/appNavigationConfig.xml	(revision 7336)
 +++ source/config/appNavigationConfig.xml	(working copy)
-@@ -810,6 +810,11 @@
+@@ -810,6 +810,10 @@
  			<RETURN_PAGE ID="SUCCESS" PAGE="/successPage.jsp" />	 			 
  			<RETURN_PAGE ID="ERROR" PAGE="/errorPage.jsp" />	 
  		</NAVIGATION>
 +		<NAVIGATION  SCREEN_ID="RESQ_USERACTVT_REPORT_5"  ACTION_ID="processUARprtGeneration.do"  ACTION_CLASS="com.greenlight.rqAdapter.ui.actions.resqActions.UserActvtTmplRptAction">
-+			<RETURN_PAGE ID="showProcessingProgess" PAGE="/jsp/resqJsp/processingProgess.jsp" />
 +			<RETURN_PAGE ID="SUCCESS" PAGE="/successPage.jsp" />	 			 
 +			<RETURN_PAGE ID="ERROR" PAGE="/errorPage.jsp" />	 
 +		</NAVIGATION>
  		<NAVIGATION  SCREEN_ID="RESQ_USERACTVT_REPORT_REVIEW1"  ACTION_ID="showReviewWindow.do"  ACTION_CLASS="com.greenlight.rqAdapter.ui.actions.resqActions.UserActvtTmplRptAction">
  			<RETURN_PAGE ID="showReviewWindow" PAGE="/jsp/resqJsp/saveReview.jsp" />			
  			<RETURN_PAGE ID="SUCCESS" PAGE="/successPage.jsp" />	 			 
-Index: source/config/xplatformConfig.xml
-===================================================================
---- source/config/xplatformConfig.xml	(revision 7332)
-+++ source/config/xplatformConfig.xml	(working copy)
-@@ -1,7 +1,7 @@
- <?xml version="1.0" encoding="UTF-8"?>
- <xplatformConfg>
- 	<user_security>
--		<authentication>UME</authentication>
-+		<authentication>Native</authentication>
- 	</user_security>
- 	<external_vendor>
- 		<vendorname>SAPGRC</vendorname>
+@@ -853,6 +857,11 @@
+ 			<RETURN_PAGE ID="SUCCESS" PAGE="/successPage.jsp" />	 			 
+ 			<RETURN_PAGE ID="ERROR" PAGE="/errorPage.jsp" />	 
+ 		</NAVIGATION>
++		<NAVIGATION  SCREEN_ID="RESQ_USERACTVT_REPORT_FILE_NAME" ACTION_ID="showUserActvityReportDetails.do"  ACTION_CLASS="com.greenlight.rqAdapter.ui.actions.resqActions.UserActvtTmplRptAction">
++			<RETURN_PAGE ID="showUserActvityReportDetailsWindow" PAGE="/jsp/resqJsp/saveUserActvityReportDetails.jsp" />			
++			<RETURN_PAGE ID="SUCCESS" PAGE="/successPage.jsp" />	 			 
++			<RETURN_PAGE ID="ERROR" PAGE="/errorPage.jsp" />	 
++		</NAVIGATION>
+ 		<NAVIGATION  SCREEN_ID="RESQ_ADVAUDIT_REPORT_REVIEW1"  ACTION_ID="showAdvAuditReviewWindow.do"  ACTION_CLASS="com.greenlight.rqAdapter.ui.actions.resqActions.UserActvtTmplRptAction">
+ 			<RETURN_PAGE ID="showReviewWindow" PAGE="/jsp/resqJsp/saveReview.jsp" />		
+ 			<RETURN_PAGE ID="SUCCESS" PAGE="/successPage.jsp" />	 			 
 Index: source/resq_application.properties
 ===================================================================
 --- source/resq_application.properties	(revision 7354)
@@ -191,6 +530,161 @@ Index: source/resq_application.properties
 +#VES 160 Properties for user activity new download functionality
 +allow.download.through.legacy.process=N
 +user.activity.downloaded.files.path=/home/sagar/Documents/Greenlight/VES160/user_activity_files
+Index: webContent/jsp/resqJsp/saveUserActvityReportDetails.jsp
+===================================================================
+--- webContent/jsp/resqJsp/saveUserActvityReportDetails.jsp	(revision 0)
++++ webContent/jsp/resqJsp/saveUserActvityReportDetails.jsp	(revision 0)
+@@ -0,0 +1,150 @@
++<!-- 
++created by : Sagar Singh
++created on : 05th Feb 21
++name :saveUserActivityReportDetails.jsp
++ -->
++<%@ page contentType="text/html; charset=UTF-8" %>
++<% response.setHeader("Pragma","no-cache");%> 
++<% response.setHeader("Cache-Control","no-store");%> 
++<% response.setDateHeader("Expires",-1);%>
++
++<%@page import="com.greenlight.rqAdapter.framework.messagebundle.I18nUtil"%>
++<%@page import="com.greenlight.rqAdapter.utils.XAppUtils"%>
++<%@page import="com.greenlight.rqAdapter.framework.messagebundle.MessagesBundle"%>
++<%@page import="java.util.Locale"%>
++<%@page import="com.greenlight.rqAdapter.framework.security.UserSecurityInterface"%>
++<%@page import="com.greenlight.rqAdapter.framework.security.User"%>
++<%@page import="com.greenlight.rqAdapter.framework.security.UMEUserSecurityImpl"%>
++<%@page import="com.greenlight.rqAdapter.ui.forms.resqForms.AuditLogForm"%>
++
++<%@ taglib uri="/WEB-INF/taglibs/i18n.tld" prefix="i18n"%>
++
++<%
++String contextPath = request.getContextPath();
++java.util.Locale USER_LOCALE = (java.util.Locale) request.getSession().getAttribute("LOGIN_USER_LOCALE") ;
++String ui_theme = XAppUtils.getUITheme();
++%>
++<%
++
++AuditLogForm auditForm = (AuditLogForm) request.getSession().getAttribute("AuditLogForm");	
++auditForm = ( auditForm == null ? new AuditLogForm() : auditForm ) ;
++String selectedIds = "";
++int selectedIdsize = 0;
++if(request.getSession().getAttribute("SelectedIds")!=null){
++selectedIds = request.getSession().getAttribute("SelectedIds").toString();
++
++selectedIdsize = auditForm.getSelectIdCount();
++}
++%>
++<script language="JavaScript" src="<%= contextPath %>/js/strfunctions.js"></script>
++<script language="JavaScript" src="<%= contextPath %>/js/numberFunctions.js"></script>
++<script language="JavaScript" src="<%= contextPath %>/js/FerantLib.js"></script>
++<script src="<%= contextPath %>/pivottable/jquery.min.js"></script>
++<script src="<%= contextPath %>/fusionCharts/graph/Code/assets/ui/js/json2.js" type="text/javascript"></script>
++<link href="<%= contextPath %>/css/Style_<%=ui_theme%>.css" rel="stylesheet" type="text/css">
++
++<head>
++<script language="javascript">
++window.setTimeout("window.parent.sessionTimeOut();", <%= session.getMaxInactiveInterval()*1000 %>);
++</script>
++</head>
++
++<%@page import="java.util.List"%>
++<html>
++<body>
++	 <form action="showReviewWindow1.do" method="post" id="form0">
++		<table width="99%" border="0" cellpadding="0" cellspacing="0">
++			<tr>
++			  <td>
++				<table width="100%" class="table_border_new"
++					cellpadding="1" cellspacing="0">
++					<TBODY>
++						<TR class="table_header_darker" height="25px">
++							<td align="left" width="50%">&nbsp;&nbsp; <input
++								type="button" role="button" id="Save" name="Save"
++								title="<%=I18nUtil.getString(USER_LOCALE, "CROSSAPP.SAVE")%>"
++								value="<%=I18nUtil.getString(USER_LOCALE, "CROSSAPP.SAVE")%>"
++								class="BlueButton" onClick="javascript:submitForm('SAVE');" />&nbsp;&nbsp;
++								<input type="button" role="button" id="Cancel" name="Cancel"
++								title="<%=I18nUtil.getString(USER_LOCALE, "CROSSAPP.CANCEL")%>"
++								value="<%=I18nUtil.getString(USER_LOCALE, "CROSSAPP.CANCEL")%>"
++								class="BlueButton" onClick="javascript:submitForm('CANCEL');" />&nbsp;&nbsp;
++							</td>
++						</TR>
++						<TR>
++							<TD>
++								<TABLE class="text_item_ERM" id="Table1" cellSpacing="3"
++									cellPadding="2" width="80%" border="0">
++									<TR>
++										<TD width="50%" class="text_item_ERM_re"><%=I18nUtil.getString(USER_LOCALE, "USER.ACTIVITY.REPORT.NAME")%>:
++										</TD>
++											<TD width="17%"><span id="valideto_outer1"><span
++													id="validefrom_outer14"><span id="valideto_outer2"><span
++															id="validefrom_outer3"> <input name="reportName" id="reportName"
++																role="textbox"
++																aria-label="<%=I18nUtil.getString(USER_LOCALE, "USER.ACTIVITY.REPORT.NAME")%>"
++																type="text" class="input235_gray" value="" />&nbsp;
++														</span></span></span></span></TD>
++										</TR>
++							 </TABLE>
++						</TR>
++					</tbody>
++				</table>
++		</table>
++	 </form> 
++</body>
++</html>
++<script>
++function submitForm(operation) {
++	if (operation == 'SAVE') {
++		var parentWindowElement=window.parent.document.forms[0];
++		var xmlhttp=GetXmlHttpObject();
++		var requestParams="tempName="+parentWindowElement.tempName.value
++			+"&roleName="+parentWindowElement.roleName.value
++			+"&resqUser="+parentWindowElement.resqUser.value					
++	        +"&resqOwner="+parentWindowElement.resqOwner.value
++	        +"&startDate="+parentWindowElement.startDate.value
++	        +"&endDate="+parentWindowElement.endDate.value
++	        +"&reportFrom="+document.forms[0].reportName.value
++	        +"&fetchClobData='YES'";
++		
++		var url = 'processUARprtGeneration.do?'+requestParams;
++		
++	 	xmlhttp.onreadystatechange = function() {
++			if (this.readyState == 4 && this.status == 200) {
++			 if(xmlhttp.responseText){
++			 }
++			}
++		 };
++		 xmlhttp.open("POST",url,true);
++		 xmlhttp.send();
++		
++		window.parent.closePopup();
++//		document.getElementById("Save").disabled = true;
++//		document.forms[0].action = 'saveReview1.do?logId=' + logId
++	//			+ "&activityType=" + activityType + "&fetchReportFrom="
++		//		+ fetchReportFrom;
++		//window.parent.document.forms[0].action = 'saveReviewRedirect1.do?records='
++			//	+ records;
++	//	document.forms[0].submit();
++	}
++	if (operation == 'CANCEL') {
++		window.parent.closePopup();
++	}
++}
++
++function GetXmlHttpObject(){
++	if (window.XMLHttpRequest){
++ 		// code for IE7+, Firefox, Chrome, Opera, Safari
++  		return new XMLHttpRequest();
++  	}
++	if (window.ActiveXObject){
++ 		 // code for IE6, IE5
++ 		 return new ActiveXObject("Microsoft.XMLHTTP");
++ 	 }
++	return null;
++}
++
++</script>
++</html>
++
 Index: webContent/jsp/resqJsp/showUserActvtTmplRpt.jsp
 ===================================================================
 --- webContent/jsp/resqJsp/showUserActvtTmplRpt.jsp	(revision 7376)
@@ -222,8 +716,8 @@ Index: webContent/jsp/resqJsp/showUserActvtTmplRpt.jsp
 +				var actionPath='downloadTmplAss1.do?'+str;
 +				openPopup (actionPath, 'downloadreport', '<%= I18nUtil.getString(USER_LOCALE, "RESQ.LEFTNAV.RESQ.ADMIN.REPORTS.USER.ACT.REPORT") %>', 250, 650) ;
 +			}else{
-+				var actionPath='processUARprtGeneration.do?'+str;
-+				openPopup (actionPath, 'downloadreport', '<%= I18nUtil.getString(USER_LOCALE, "RESQ.LEFTNAV.RESQ.ADMIN.REPORTS.USER.ACT.REPORT") %>', 250, 650) ;
++				var actionPath='showUserActvityReportDetails.do';
++				openPopup (actionPath, 'showInfo', '<%= I18nUtil.getString(USER_LOCALE, "RESQ.LEFTNAV.RESQ.ADMIN.REPORTS.USER.ACT.REPORT") %>', 250, 650) ;
 +			}
 +			
  			return false;
