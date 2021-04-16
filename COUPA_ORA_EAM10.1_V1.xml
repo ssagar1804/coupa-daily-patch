@@ -96,8 +96,8 @@
 					<parameter parameterName="#Name::#Created Date::#Created By::#Last Updated By::#Last Updated Date" description="Log Id" datatype="String" default="" categorty="IN" format="res_q_address_list" seqNum="1" columnName="SETLOGID" lowparam="0::$FIRSTNAME $LASTNAME" filterBy="fullname"/>
 					<parameter parameterName="Name" description="Name" datatype="String" default="" categorty="IN" format="res_q_address_list" seqNum="2" columnName="" />
 					<parameter parameterName="Created By" description="Created By" datatype="String" default="" categorty="IN" format="res_q_address_list" seqNum="3" columnName="SETUSERNAME" />
-					<parameter parameterName="Created Date" description="Created Date" datatype="DATETIME" default="" categorty="IN" format="res_q_address_list" seqNum="4" columnName="SETLOGDATE" tableName="dd-MM-yyyy"/>
-					<parameter parameterName="Created Date" description="Created Date" datatype="DATETIME" default="" categorty="IN" format="res_q_address_list" seqNum="4" columnName="SETLOGTIME" tableName="dd-MM-yyyy"/>
+					<parameter parameterName="Created Date" description="Created Date" datatype="DATETIME" default="" categorty="IN" format="res_q_address_list" seqNum="4" columnName="SETLOGDATE" tableName="MM/dd/yy"/>
+					<parameter parameterName="Created Date" description="Created Date" datatype="DATETIME" default="" categorty="IN" format="res_q_address_list" seqNum="4" columnName="SETLOGTIME" tableName="MM/dd/yy"/>
 					<parameter parameterName="Last Updated By" description="Last Updated By" datatype="String" default="" categorty="IN" format="res_q_address_list" seqNum="5" columnName="" />
 					<parameter parameterName="Last Updated Date" description="Last Updated Date" datatype="DATETIME" default="" categorty="IN" format="res_q_address_list" seqNum="6" columnName="" />
 					<parameter parameterName="Audit Type" description="AUDIT TYPE" datatype="STRING" categorty="IN" default="res_q_address_list" format="res_q_address_list"  seqNum="7" columnName="USER_DEF_01" />
