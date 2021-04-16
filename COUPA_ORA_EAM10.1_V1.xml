@@ -80,7 +80,7 @@
 									
 					<!-- End:: revision_records  -->
 
-					<!-- Start:: res_q_tax_code_list  -->
+					<!-- Start:: RES_Q_TAX_CODE_LIST  -->
 					<parameter parameterName="#Code::#Created Date::#Created By::#Last Updated By::#Last Updated Date" description="Log Id" datatype="String" default="" categorty="IN" format="res_q_tax_code_list" seqNum="1" columnName="SETLOGID" lowparam="0::$FIRSTNAME $LASTNAME" filterBy="fullname"/>
 					<parameter parameterName="Code" description="Code" datatype="String" default="" categorty="IN" format="res_q_tax_code_list" seqNum="2" columnName="" />
 					<parameter parameterName="Created By" description="Created By" datatype="String" default="" categorty="IN" format="res_q_tax_code_list" seqNum="3" columnName="SETUSERNAME" />
@@ -90,9 +90,9 @@
 					<parameter parameterName="Last Updated Date" description="Last Updated Date" datatype="DATETIME" default="" categorty="IN" format="res_q_tax_code_list" seqNum="6" columnName="" />
 					<parameter parameterName="Audit Type" description="AUDIT TYPE" datatype="STRING" categorty="IN" default="res_q_tax_code_list" format="res_q_tax_code_list"  seqNum="7" columnName="USER_DEF_01" />
 					<parameter parameterName="Object" description="Object" datatype="STRING" categorty="IN" default="res_q_tax_code_list" format="res_q_tax_code_list"  seqNum="8" columnName="USER_DEF_02" />
-					<!-- End:: res_q_tax_code_list  -->
+					<!-- End:: RES_Q_TAX_CODE_LIST  -->
 					
-					<!-- Start:: res_q_address_list  -->
+					<!-- Start:: RES_Q_ADDRESS_LIST  -->
 					<parameter parameterName="#Name::#Created Date::#Created By::#Last Updated By::#Last Updated Date" description="Log Id" datatype="String" default="" categorty="IN" format="res_q_address_list" seqNum="1" columnName="SETLOGID" lowparam="0::$FIRSTNAME $LASTNAME" filterBy="fullname"/>
 					<parameter parameterName="Name" description="Name" datatype="String" default="" categorty="IN" format="res_q_address_list" seqNum="2" columnName="" />
 					<parameter parameterName="Created By" description="Created By" datatype="String" default="" categorty="IN" format="res_q_address_list" seqNum="3" columnName="SETUSERNAME" />
@@ -102,7 +102,44 @@
 					<parameter parameterName="Last Updated Date" description="Last Updated Date" datatype="DATETIME" default="" categorty="IN" format="res_q_address_list" seqNum="6" columnName="" />
 					<parameter parameterName="Audit Type" description="AUDIT TYPE" datatype="STRING" categorty="IN" default="res_q_address_list" format="res_q_address_list"  seqNum="7" columnName="USER_DEF_01" />
 					<parameter parameterName="Object" description="Object" datatype="STRING" categorty="IN" default="res_q_address_list" format="res_q_address_list"  seqNum="8" columnName="USER_DEF_02" />
-					<!-- End:: res_q_address_list  -->
+					<!-- End:: RES_Q_ADDRESS_LIST  -->
+					
+					<!-- Start:: RES_Q_APPROVAL_CHAIN_LIST  -->
+					<parameter parameterName="#Name::#Created Date::#Created By::#Last Updated By::#Last Updated Date" description="Log Id" datatype="String" default="" categorty="IN" format="res_q_approval_chain_list" seqNum="1" columnName="SETLOGID" lowparam="0::$FIRSTNAME $LASTNAME" filterBy="fullname"/>
+					<parameter parameterName="Name" description="Name" datatype="String" default="" categorty="IN" format="res_q_approval_chain_list" seqNum="2" columnName="" />
+					<parameter parameterName="Created By" description="Created By" datatype="String" default="" categorty="IN" format="res_q_approval_chain_list" seqNum="3" columnName="SETUSERNAME" />
+					<parameter parameterName="Created Date" description="Created Date" datatype="DATETIME" default="" categorty="IN" format="res_q_approval_chain_list" seqNum="4" columnName="SETLOGDATE" tableName="MM/dd/yy"/>
+					<parameter parameterName="Created Date" description="Created Date" datatype="DATETIME" default="" categorty="IN" format="res_q_approval_chain_list" seqNum="4" columnName="SETLOGTIME" tableName="MM/dd/yy"/>
+					<parameter parameterName="Last Updated By" description="Last Updated By" datatype="String" default="" categorty="IN" format="res_q_approval_chain_list" seqNum="5" columnName="" />
+					<parameter parameterName="Last Updated Date" description="Last Updated Date" datatype="DATETIME" default="" categorty="IN" format="res_q_approval_chain_list" seqNum="6" columnName="" />
+					<parameter parameterName="Audit Type" description="AUDIT TYPE" datatype="STRING" categorty="IN" default="res_q_approval_chain_list" format="res_q_approval_chain_list"  seqNum="7" columnName="USER_DEF_01" />
+					<parameter parameterName="Object" description="Object" datatype="STRING" categorty="IN" default="res_q_approval_chain_list" format="res_q_approval_chain_list"  seqNum="8" columnName="USER_DEF_02" />
+					<!-- End:: RES_Q_APPROVAL_CHAIN_LIST  -->
+					
+					<!-- Start:: RES_Q_APPROVAL_LIMIT_LIST  -->
+					<parameter parameterName="#Position::#Created Date::#Created By::#Last Updated By::#Last Updated Date" description="Log Id" datatype="String" default="" categorty="IN" format="res_q_approval_limit_list" seqNum="1" columnName="SETLOGID" lowparam="0::$FIRSTNAME $LASTNAME" filterBy="fullname"/>
+					<parameter parameterName="Position" description="Position" datatype="String" default="" categorty="IN" format="res_q_approval_limit_list" seqNum="2" columnName="" />
+					<parameter parameterName="Created By" description="Created By" datatype="String" default="" categorty="IN" format="res_q_approval_limit_list" seqNum="3" columnName="SETUSERNAME" />
+					<parameter parameterName="Created Date" description="Created Date" datatype="DATETIME" default="" categorty="IN" format="res_q_approval_limit_list" seqNum="4" columnName="SETLOGDATE" tableName="MM/dd/yy"/>
+					<parameter parameterName="Created Date" description="Created Date" datatype="DATETIME" default="" categorty="IN" format="res_q_approval_limit_list" seqNum="4" columnName="SETLOGTIME" tableName="MM/dd/yy"/>
+					<parameter parameterName="Last Updated By" description="Last Updated By" datatype="String" default="" categorty="IN" format="res_q_approval_limit_list" seqNum="5" columnName="" />
+					<parameter parameterName="Last Updated Date" description="Last Updated Date" datatype="DATETIME" default="" categorty="IN" format="res_q_approval_limit_list" seqNum="6" columnName="" />
+					<parameter parameterName="Audit Type" description="AUDIT TYPE" datatype="STRING" categorty="IN" default="res_q_approval_limit_list" format="res_q_approval_limit_list"  seqNum="7" columnName="USER_DEF_01" />
+					<parameter parameterName="Object" description="Object" datatype="STRING" categorty="IN" default="res_q_approval_limit_list" format="res_q_approval_limit_list"  seqNum="8" columnName="USER_DEF_02" />
+					<!-- End:: RES_Q_APPROVAL_LIMIT_LIST  -->
+					
+					<!-- Start:: RES_Q_APPROVAL_LIMIT_LIST  -->
+					<parameter parameterName="#Position::#Created Date::#Created By::#Last Updated By::#Last Updated Date" description="Log Id" datatype="String" default="" categorty="IN" format="res_q_approval_limit_list" seqNum="1" columnName="SETLOGID" lowparam="0::$FIRSTNAME $LASTNAME" filterBy="fullname"/>
+					<parameter parameterName="Position" description="Position" datatype="String" default="" categorty="IN" format="res_q_approval_limit_list" seqNum="2" columnName="" />
+					<parameter parameterName="Created By" description="Created By" datatype="String" default="" categorty="IN" format="res_q_approval_limit_list" seqNum="3" columnName="SETUSERNAME" />
+					<parameter parameterName="Created Date" description="Created Date" datatype="DATETIME" default="" categorty="IN" format="res_q_approval_limit_list" seqNum="4" columnName="SETLOGDATE" tableName="MM/dd/yy"/>
+					<parameter parameterName="Created Date" description="Created Date" datatype="DATETIME" default="" categorty="IN" format="res_q_approval_limit_list" seqNum="4" columnName="SETLOGTIME" tableName="MM/dd/yy"/>
+					<parameter parameterName="Last Updated By" description="Last Updated By" datatype="String" default="" categorty="IN" format="res_q_approval_limit_list" seqNum="5" columnName="" />
+					<parameter parameterName="Last Updated Date" description="Last Updated Date" datatype="DATETIME" default="" categorty="IN" format="res_q_approval_limit_list" seqNum="6" columnName="" />
+					<parameter parameterName="Audit Type" description="AUDIT TYPE" datatype="STRING" categorty="IN" default="res_q_approval_limit_list" format="res_q_approval_limit_list"  seqNum="7" columnName="USER_DEF_01" />
+					<parameter parameterName="Object" description="Object" datatype="STRING" categorty="IN" default="res_q_approval_limit_list" format="res_q_approval_limit_list"  seqNum="8" columnName="USER_DEF_02" />
+					<!-- End:: RES_Q_APPROVAL_LIMIT_LIST  -->
+					
 					
 					<!--  Output Columns  -->
 					<programField fieldName="USER_DEF_01" alias="1" seqNum="1" description="Audit Area" datatype="STRING" length="100" isFilter="true" dependentFilter="USER_DEF_02"/>
