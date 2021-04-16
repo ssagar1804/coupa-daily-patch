@@ -1,0 +1,14 @@
+Index: UserActvtTmplRptDAO.java
+===================================================================
+--- UserActvtTmplRptDAO.java	(revision 7525)
++++ UserActvtTmplRptDAO.java	(revision 7526)
+@@ -1732,6 +1732,9 @@
+ 
+ 			if(!hideDetails){
+ 				s1.setColumnView(col, 50);
++				if(clobData!=null && clobData.length()>EXCEL_CELL_MAX_CHAR_LIMIT) {
++					clobData.delete(EXCEL_CELL_MAX_CHAR_LIMIT, clobData.length());
++				}
+ 				datacell = new Label(col++,row,clobData.toString(),stringFormatWrap);
+ 				s1.addCell(datacell);
+ 			}

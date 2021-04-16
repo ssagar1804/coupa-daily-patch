@@ -1,0 +1,210 @@
+Index: source/resq_application.properties
+===================================================================
+--- source/resq_application.properties	(revision 7423)
++++ source/resq_application.properties	(revision 7424)
+@@ -121,4 +121,4 @@
+ include.mail.list.to.recipient.email.assignment.failure.operation=Y
+ 
+ #VES 160 Properties for user activity new download functionality
+-user.activity.downloaded.files.path=/usr/sap/trans/EPS/in/ResQ_Dev/UA
+\ No newline at end of file
++user.activity.downloaded.files.path=downloads
+\ No newline at end of file
+Index: source/com/greenlight/rqAdapter/dao/resqDAO/UserActvtTmplRptDAO.java
+===================================================================
+--- source/com/greenlight/rqAdapter/dao/resqDAO/UserActvtTmplRptDAO.java	(revision 7423)
++++ source/com/greenlight/rqAdapter/dao/resqDAO/UserActvtTmplRptDAO.java	(revision 7424)
+@@ -3460,7 +3460,6 @@
+ 		Integer groupedSheetNumber = 1;
+ 		Integer detailId = null;
+ 		Double fileSize = Double.valueOf(0.0);
+-		String zipFileName = "";
+ 		try {
+ 
+ 			detailId = RDownloadsDAO.addNewEntryForUserActivityDownloadedFile(systemId, fileNameEntered,
+@@ -3471,7 +3470,7 @@
+ 						fileNameEntered.replace(XAppConstants.EXT_XLS, (XAppConstants.UNDERSCORE + detailId+XAppConstants.EXT_XLS));
+ 				RDownloadsDAO.updateEntryForUserActivityDownloadedFile(detailId,
+ 						XAppConstants.FILE_GENERATION_IN_PROGRESS, fileSize, null,
+-						fileNameEntered , zipFileName);
++						fileNameEntered , null);
+ 
+ 				ws = new WorkbookSettings();
+ 				ws.setLocale(locale);
+@@ -3633,7 +3632,7 @@
+ 					_logger.debug("Error while closing OS:", e);
+ 				}
+ 			}
+-			RDownloadsDAO.writeDownTheRecordsInAFile(absfilePath, fileNameEntered, detailId, zipFileName);
++			RDownloadsDAO.writeDownTheRecordsInAFile(absfilePath, fileNameEntered, detailId);
+ 			XAppUtils.closeOpenCursors(xAppConnection, statement, rs);
+ 			XAppUtils.closeOpenCursors(xAppConnection1, null,null);
+ 		}
+Index: source/com/greenlight/rqAdapter/dao/resqDAO/RDownloadsDAO.java
+===================================================================
+--- source/com/greenlight/rqAdapter/dao/resqDAO/RDownloadsDAO.java	(revision 7423)
++++ source/com/greenlight/rqAdapter/dao/resqDAO/RDownloadsDAO.java	(revision 7424)
+@@ -22,6 +22,7 @@
+ import com.greenlight.rqAdapter.logs.Log;
+ import com.greenlight.rqAdapter.utils.DateUtil;
+ import com.greenlight.rqAdapter.utils.XAppConstants;
++import com.greenlight.rqAdapter.utils.XAppListener;
+ import com.greenlight.rqAdapter.utils.XAppUtils;
+ import com.greenlight.rqAdapter.utils.ZipUtils;
+ 
+@@ -114,7 +115,7 @@
+ 			} // end of while rs next
+ 
+ 		} catch (Exception e) {
+-			LOGGER.debug("RDownloadsDAO :: getDownloadedList :: error ::" ,e);
++			LOGGER.debug("RDownloadsDAO :: getDownloadedList :: error ::", e);
+ 		} finally {
+ 			XAppUtils.closeOpenCursors(xAppConnection, statement, rs);
+ 		}
+@@ -135,8 +136,17 @@
+ 						+ "FROM GLT_RQ_DOWNLOADS WHERE DETAIL_ID in(" + detailIdStr + ")";
+ 				statement = xAppConnection.prepareStatement(selectSqlString);
+ 				rs = statement.executeQuery();
+-				String docPathOnServer = XAppUtils.getFilePathForProp()
+-						.getProperty(XAppConstants.USER_ACTIVITY_DOWNLOADED_FILES_PATH);
++				String docPathOnServer = null;
++				if (StringUtils.isNotBlank(XAppListener.CROSS_APP_HOME_CLUSTER)) {
++					docPathOnServer = XAppConstants.APPLICATION_FILES_FOLDER + File.separator + XAppUtils.getFilePathForProp()
++							.getProperty(XAppConstants.USER_ACTIVITY_DOWNLOADED_FILES_PATH);
++					LOGGER.debug("Got the cluster path");
++				} else {
++					docPathOnServer = XAppListener.CROSS_APP_HOME + File.separator + XAppUtils.getFilePathForProp()
++							.getProperty(XAppConstants.USER_ACTIVITY_DOWNLOADED_FILES_PATH);
++				}
++
++				LOGGER.debug("Location at which file is going to be fetched ::" + docPathOnServer);
+ 				while (rs.next()) {
+ 					Integer detailId = rs.getInt(DETAIL_ID);
+ 					String reportName = rs.getString("REPORT_NAME");
+@@ -206,8 +216,20 @@
+ 						+ "AND ZIP_FILE_NAME IS NOT NULL AND ZIP_FILE_NAME LIKE '%.zip%'";
+ 				statement = xAppConnection.prepareStatement(selectSqlString);
+ 				rs = statement.executeQuery();
+-				String docPathOnServer = XAppUtils.getFilePathForProp()
+-						.getProperty(XAppConstants.USER_ACTIVITY_DOWNLOADED_FILES_PATH);
++				
++				
++				String docPathOnServer = null;
++				if (StringUtils.isNotBlank(XAppListener.CROSS_APP_HOME_CLUSTER)) {
++					docPathOnServer = XAppConstants.APPLICATION_FILES_FOLDER + File.separator + XAppUtils.getFilePathForProp()
++							.getProperty(XAppConstants.USER_ACTIVITY_DOWNLOADED_FILES_PATH);
++					LOGGER.debug("Got the cluster path");
++				} else {
++					docPathOnServer = XAppListener.CROSS_APP_HOME + File.separator + XAppUtils.getFilePathForProp()
++							.getProperty(XAppConstants.USER_ACTIVITY_DOWNLOADED_FILES_PATH);
++				}
++				
++				LOGGER.debug("Location at which file is going to be fetched ::" + docPathOnServer);
++
+ 				while (rs.next()) {
+ 					String reportNameForZipFile = rs.getString("ZIP_FILE_NAME");
+ 					if (StringUtils.isNotBlank(reportNameForZipFile)) {
+@@ -215,7 +237,7 @@
+ 					}
+ 				}
+ 				String zipFileName = "UserActivity_" + System.currentTimeMillis() + XAppConstants.EXT_ZIP;
+-				String destPath = docPathOnServer + XAppConstants.FWD_SLASH + zipFileName;
++				String destPath = docPathOnServer + File.separator + zipFileName;
+ 				ZipUtils.createZipFolder(docPathOnServer, destPath, filenameList);
+ 				return destPath;
+ 
+@@ -316,36 +338,30 @@
+ 		}
+ 	}
+ 
+-	public static void writeDownTheRecordsInAFile(String absfilePath, String fileNameEntered, Integer detailId,
+-			String zipFileName) {
++	public static void writeDownTheRecordsInAFile(String absfilePath, String fileNameEntered, Integer detailId) {
+ 		Double fileSize;
+-		LOGGER.debug("absfilePath:" + absfilePath);
++		String zipFileName = "";
+ 		if (!XAppUtils.isBlankOrNull(absfilePath)) {
+ 			String docPathOnServer = null;
+ 			try {
+-				File file = new File(absfilePath);
+-				String fileNamePathWithoutUnderscore = absfilePath.substring(0, absfilePath.lastIndexOf("_"));
++				File xlsFileOnDecidedPath = new File(absfilePath);
++				docPathOnServer = xlsFileOnDecidedPath.getParent();
++				String fileNamePathWithoutUnderscore = docPathOnServer+File.separator+fileNameEntered;
+ 				File fileWithoutUnderscore = new File(fileNamePathWithoutUnderscore);
+-				boolean renamed = file.renameTo(fileWithoutUnderscore);
++				boolean renamed = xlsFileOnDecidedPath.renameTo(fileWithoutUnderscore);
+ 				LOGGER.debug("file renamed 1st Time:" + renamed);
+-				docPathOnServer = XAppUtils.getFilePathForProp()
+-						.getProperty(XAppConstants.USER_ACTIVITY_DOWNLOADED_FILES_PATH);
+-				File xlsFileOnDecidedPath = new File(docPathOnServer, fileNameEntered);
+-				renamed = fileWithoutUnderscore.renameTo(xlsFileOnDecidedPath);
+ 				if (!renamed) {
+ 					Thread.sleep(2000);
+-					renamed = fileWithoutUnderscore.renameTo(xlsFileOnDecidedPath);
++					renamed = xlsFileOnDecidedPath.renameTo(fileWithoutUnderscore);
++					LOGGER.debug("file renamed 2nd Time:" + renamed);
+ 				}
+ 
+-				// TO COPY file1.txt from source to destination folder
+-				LOGGER.debug("file renamed 2nd time:" + renamed);
+-
+ 				zipFileName = fileNameEntered.substring(0, fileNameEntered.lastIndexOf(XAppConstants.DOT))
+ 						+ XAppConstants.EXT_ZIP;
+ 				List filenameList = new ArrayList();
+ 				filenameList.add(fileNameEntered);
+ 
+-				String zipFileNamePath = docPathOnServer + XAppConstants.FWD_SLASH + zipFileName;
++				String zipFileNamePath = docPathOnServer + File.separator + zipFileName;
+ 				ZipUtils.createZipFolder(docPathOnServer, zipFileNamePath, filenameList);
+ 				LOGGER.debug("zip file created successfully::" + zipFileName);
+ 				fileSize = (double) new File(docPathOnServer, zipFileName).length() / 1024;
+Index: source/com/greenlight/rqAdapter/ui/actions/resqActions/UserActvtTmplRptAction.java
+===================================================================
+--- source/com/greenlight/rqAdapter/ui/actions/resqActions/UserActvtTmplRptAction.java	(revision 7423)
++++ source/com/greenlight/rqAdapter/ui/actions/resqActions/UserActvtTmplRptAction.java	(revision 7424)
+@@ -553,21 +553,36 @@
+ 						+ request.getParameter("fetchReportFrom"));
+ 				request.getSession().setAttribute("UserActvtTmplRptForm", userActvtTmplRptForm);
+ 
+-				String dirPath = XAppListener.CROSS_APP_HOME + File.separator + XAppConstants.DOCS_FOLDER
+-						+ File.separator;
++				String dirPath = null;
++				if (StringUtils.isNotBlank(XAppListener.CROSS_APP_HOME_CLUSTER)) {
++					dirPath = XAppConstants.APPLICATION_FILES_FOLDER + File.separator + XAppUtils.getFilePathForProp()
++							.getProperty(XAppConstants.USER_ACTIVITY_DOWNLOADED_FILES_PATH);
++					_logger.debug("Got the cluster path");
++				} else {
++					dirPath = XAppListener.CROSS_APP_HOME + File.separator + XAppUtils.getFilePathForProp()
++							.getProperty(XAppConstants.USER_ACTIVITY_DOWNLOADED_FILES_PATH);
++					_logger.debug("Got the APP_HOME path");
++				}
+ 
+-				String fileNameEntered = 
+-						request.getParameter("fileNameEntered") == null ? "" : request.getParameter("fileNameEntered").trim();
++				_logger.debug("Directory path in which the file is going to be created "+dirPath);
++				File dirPathFileObj = new File(dirPath);
++				if(!dirPathFileObj.exists()){
++					dirPathFileObj.mkdirs();		    		 
++				}	
+ 				
+-				fileNameEntered = fileNameEntered+".xls";
+-				String absfilePath = dirPath + fileNameEntered;
++				String fileNameEntered = request.getParameter("fileNameEntered") == null ? ""
++						: request.getParameter("fileNameEntered").trim();
++
++				fileNameEntered = fileNameEntered + ".xls";
++				String absfilePath = dirPath + File.separator + fileNameEntered;
+ 				_logger.debug("absfilePath::" + absfilePath);
+ 				String fileNameWithUnderscore = absfilePath + "_";
+ 				File actualfile = new File(fileNameWithUnderscore);
+ 				OutputStream out = new FileOutputStream(actualfile);
+ 
+-				UserActivityReportBackgroundPrepartionThread uaDownloadThread = new UserActivityReportBackgroundPrepartionThread(out, userActvtTmplRptForm,
+-						showSensitiveData, fetchClob, locale, fileNameWithUnderscore,fileNameEntered);
++				UserActivityReportBackgroundPrepartionThread uaDownloadThread = new UserActivityReportBackgroundPrepartionThread(
++						out, userActvtTmplRptForm, showSensitiveData, fetchClob, locale, fileNameWithUnderscore,
++						fileNameEntered);
+ 				Thread downloadThread = new Thread(uaDownloadThread);
+ 				downloadThread.start();
+ 				request.setAttribute("fileName", absfilePath);

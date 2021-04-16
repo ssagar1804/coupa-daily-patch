@@ -1,0 +1,77 @@
+Index: source/com/greenlight/rta10/provisioning/handler/RTA10CUPEAImpl1.java
+===================================================================
+--- source/com/greenlight/rta10/provisioning/handler/RTA10CUPEAImpl1.java	(revision 10673)
++++ source/com/greenlight/rta10/provisioning/handler/RTA10CUPEAImpl1.java	(revision 10674)
+@@ -394,12 +394,20 @@
+ 	public SpmlResponse doRemoveRoles(ModifyRequest spmlRequest, String[] roles) {
+ 		SpmlResponse response = null;
+ 		response = spmlRequest.createResponse();
++		String username=null;
++		String requestDesc = "";
++		SpmlResponse failureResponse = genericApi.createFailureResponse(spmlRequest.createResponse());
++		List<String> failureMsg = new ArrayList<String>();
+ 		try {
+ 			if (roles != null && roles.length > 0) {
++				List failedRoles = new ArrayList();
+ 				Attribute attribute = spmlRequest.getOperationalAttribute("data");
+ 				Map requestData = (Map)((Attribute) spmlRequest.getOperationalAttribute("requestData")).getValue();
+ 				XAppUtils.sop("requestData::" + requestData);
+ 				
++				username = spmlRequest.getIdentifierString();
++				String firstname = username, lastname = username, emailId = username;
++				
+ 				Map spmlData = null;
+ 				if (attribute == null) {
+ 					spmlData = new HashMap();
+@@ -414,6 +422,18 @@
+ 				spmlData.put(CommonUtil._REQID, spmlRequest.getRequestId());
+ 				spmlData.put(XAppConstants.LOCATION, requestData.get(XAppConstants.LOCATION));
+ 				spmlData.put(CommonUtil._USERNAME, spmlRequest.getIdentifierString());
++				
++				username = String.valueOf(spmlData.get(CommonUtil._USERNAME));
++				firstname = String.valueOf(spmlData.get(CommonUtil._FIRSTNAME));
++				lastname = String.valueOf(spmlData.get(CommonUtil._LASTNAME));
++				emailId = String.valueOf(spmlData.get(CommonUtil._EMAIL));
++				
++				requestDesc = XAppConstants.REQUESTID + XAppConstants.EQUALTO + spmlRequest.getRequestId()
++						+ XAppConstants.PIPE + XAppConstants.USERNAME + XAppConstants.EQUALTO + username
++						+ XAppConstants.PIPE + XAppConstants.FIRSTNAME + XAppConstants.EQUALTO + firstname
++						+ XAppConstants.PIPE + XAppConstants.LASTNAME + XAppConstants.EQUALTO + lastname
++						+ XAppConstants.PIPE + XAppConstants.EMAILID + XAppConstants.EQUALTO + emailId;
++				
+ 				if (!XAppUtils.getApplicationProperty(XAppConstants.PROPERTY_GRC_USER_ACCESS_FLAG_INITIATED_FROM_GL_APP).equals(
+ 						spmlData.get(XAppConstants.LOCATION))) {
+ 					for (int i = 0; i < roles.length; i++) {
+@@ -436,7 +456,13 @@
+ 							// response =
+ 							// genericApi.createSpmlResponse(response, flag,
+ 							// msg);
++							if (!XAppConstants.SUCCESS.equalsIgnoreCase(flag)) {
++								failureMsg.add(msg);
++								failedRoles.add(roles[i]);
++							}
+ 						} else {
++							failedRoles.add(roles[i]);
++							failureMsg.add(failureResponse.getErrorMessage());
+ 							response.setOperationalAttribute(roles[i], genericApi.createFailureResponse(spmlRequest.createResponse()));
+ 							// response =
+ 							// genericApi.createFailureResponse(response);
+@@ -449,11 +475,17 @@
+ 								null));
+ 					}
+ 				}
++				prepareAuditLogEntriesForFailedRoles(spmlRequest, username, requestDesc, failureMsg, failedRoles,
++						RTA10APIConstants.DELETEROLE_R10);
+ 			}
+ 		} catch (Exception e) {
+ 			XAppUtils.sop(e);
++			String grcRequestId = XAppUtils.parseGRCRequestId(spmlRequest.getRequestId());
+ 			for (int i = 0; i < roles.length; i++) {
+-				response.setOperationalAttribute(roles[i], genericApi.createFailureResponse(spmlRequest.createResponse()));
++				response.setOperationalAttribute((String) roles[i],
++						genericApi.createFailureResponse(spmlRequest.createResponse()));
++				putEntryInAuditLog(spmlRequest, username, requestDesc, e, grcRequestId,
++						RTA10APIConstants.DELETEROLE_R10);
+ 			}
+ 		} finally {
+ 			response.setOperationalAttribute("roles", roles);

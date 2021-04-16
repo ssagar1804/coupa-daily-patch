@@ -1,0 +1,40 @@
+Index: RTA10COUPAAPIGEEImpl.java
+===================================================================
+--- RTA10COUPAAPIGEEImpl.java	(revision 10720)
++++ RTA10COUPAAPIGEEImpl.java	(revision 10721)
+@@ -553,11 +553,6 @@
+ 							String fileName = (String) entry.getKey();
+ 							// original file name will be like abc_timestamp.xlsx
+ 							// and adpater will have name like abc only
+-							String fileNameWithoutTimeStampAndExt = fileName.contains(XAppConstants.UNDERSCORE) ? fileName
+-									.substring(
+-											0,
+-											fileName.indexOf(XAppConstants.UNDERSCORE,
+-													fileName.indexOf(XAppConstants.UNDERSCORE) + 1)) : fileName;
+ 							_logger.debug("fileName::" + fileName);
+ 							
+ 							FileColumnMappingForm relevantFileMappingObject = 
+@@ -566,7 +561,9 @@
+ 							// Here to start Data Retrieving
+ 							_logger.debug("Start::retrieveData::fileNames::" + fileNames);
+ 	
+-							if (fileNParams.containsKey(fileNameWithoutTimeStampAndExt)) {
++							String fileNameWithoutTimeStampAndExt = XAppUtils.getMatchingSubString(fileNParams.keySet(),fileName);
++							_logger.debug("fileNameWithoutTimeStampAndExt ::{}", fileNameWithoutTimeStampAndExt);
++							if (StringUtils.isNotBlank(fileNameWithoutTimeStampAndExt)) {
+ 								List progParams = (List) fileNParams.get(fileNameWithoutTimeStampAndExt);
+ 								if (progParams.size() > 0) {
+ 									String[] arrVal = new String[2];
+@@ -909,10 +906,8 @@
+ 			String fileName = (String) entry.getKey();
+ 			// original file name will be like abc_timestamp.xlsx and adpater
+ 			// will have name like abc only
+-			String fileNameWithoutTimeStampAndExt = fileName.contains(XAppConstants.UNDERSCORE) ? fileName.substring(0,
+-					fileName.indexOf(XAppConstants.UNDERSCORE, fileName.indexOf(XAppConstants.UNDERSCORE) + 1))
+-					: fileName;
+-			if (adapterFiles.contains(fileNameWithoutTimeStampAndExt)) {
++			String fileNameWithoutTimeStampAndExt = XAppUtils.getMatchingSubString(adapterFiles,fileName);
++			if (fileNameWithoutTimeStampAndExt!=null) {
+ 				uaFiles.add(fileMap.get(fileName));
+ 			}
+ 		}

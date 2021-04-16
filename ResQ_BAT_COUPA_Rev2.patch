@@ -1,0 +1,13 @@
+Index: source/com/greenlight/rqAdapter/dao/resqDAO/UserActvtTmplRptDAO.java
+===================================================================
+--- source/com/greenlight/rqAdapter/dao/resqDAO/UserActvtTmplRptDAO.java	(revision 7418)
++++ source/com/greenlight/rqAdapter/dao/resqDAO/UserActvtTmplRptDAO.java	(revision 7419)
+@@ -3470,7 +3470,7 @@
+ 				fileNameEntered = 
+ 						fileNameEntered.replace(XAppConstants.EXT_XLS, XAppConstants.UNDERSCORE + detailId+XAppConstants.EXT_XLS);
+ 				RDownloadsDAO.updateEntryForUserActivityDownloadedFile(detailId,
+-						XAppConstants.FILE_GENERATION_IN_PROGRESS, fileSize, data,
++						XAppConstants.FILE_GENERATION_IN_PROGRESS, fileSize, null,
+ 						fileNameEntered + XAppConstants.UNDERSCORE + detailId, zipFileName);
+ 
+ 				ws = new WorkbookSettings();

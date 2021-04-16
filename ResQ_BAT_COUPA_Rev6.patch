@@ -1,0 +1,97 @@
+Index: source/com/greenlight/rqAdapter/utils/XAppConstants.java
+===================================================================
+--- source/com/greenlight/rqAdapter/utils/XAppConstants.java	(revision 7428)
++++ source/com/greenlight/rqAdapter/utils/XAppConstants.java	(revision 7429)
+@@ -1010,5 +1010,8 @@
+ 	public static final String UA_SHOW_LIMIT="UA_SHOW_LIMIT";
+ 	public static final String UA_DOWNLOAD_LIMIT="UA_DOWNLOAD_LIMIT";
+ 	public static final String USER_ACTIVITY_DOWNLOADED_FILES_PATH= "user.activity.downloaded.files.path";
++	
++	public static final String SUCCESS_FLAG_INDICATOR="S";
++	public static final String TERMINATING_ACCESS_CMNT="Role assignment got failed deactivating access and remove roles";
+ 
+ }
+Index: source/com/greenlight/rqAdapter/scheduler/Scheduler.java
+===================================================================
+--- source/com/greenlight/rqAdapter/scheduler/Scheduler.java	(revision 7428)
++++ source/com/greenlight/rqAdapter/scheduler/Scheduler.java	(revision 7429)
+@@ -39,7 +39,9 @@
+ import com.greenlight.rqAdapter.dao.tables.resqTables.TableRQUserTemplate;
+ import com.greenlight.rqAdapter.dto.resqDTO.AccessRequestResponseFailedDTO;
+ import com.greenlight.rqAdapter.framework.messagebundle.I18nUtil;
++import com.greenlight.rqAdapter.framework.security.User;
+ import com.greenlight.rqAdapter.logs.Log;
++import com.greenlight.rqAdapter.ui.forms.resqForms.RAssignLocalTempForm;
+ import com.greenlight.rqAdapter.ui.forms.resqForms.UserActiveTempForm;
+ import com.greenlight.rqAdapter.ui.forms.resqForms.UserOrRoleSyncRptForm;
+ import com.greenlight.rqAdapter.utils.EncriptionToDecription;
+@@ -1383,7 +1385,9 @@
+ 					}
+ 					CommonMethodsDAO.sendMail(content, null, null, multipleTo, subject, multipleErrorCc);
+ 					_logger.debug("Error while assignment of proxy or delegate in ERP. Deactivating assignment.");
+-				} if(successRolesList.size() > 0) { 
++					performOperationIfAuditTypeAssignment(locale, obj.getRecordId(), obj.getSystemId());
++					
++				} else if(successRolesList.size() > 0) { 
+ 					List ccList = null;
+ 					if(XAppConstants.YES.equalsIgnoreCase(XAppUtils.getFilePathForProp().getProperty(XAppConstants.PROPERTY_TEMPLATE_ASSIGNMENT_EMAIL_INCLUDE_ADMIN_AND_OWNER_IN_CC))) {
+ 						ccList = new ArrayList();
+@@ -1859,4 +1863,58 @@
+ 			XAppUtils.closeOpenCursors(xAppConnection, statement, null);
+ 		}
+ 	}
++	
++	private void performOperationIfAuditTypeAssignment(Locale locale, Integer templateId, Integer systemId) {
++
++		String createdByIdByRecordId = getCreatedByIdByRecordId(templateId);
++
++		RAssignLocalTempForm rAssignLocalTempForm = new RAssignLocalTempForm();
++		rAssignLocalTempForm.setRqUserTempId(templateId);
++		rAssignLocalTempForm.setTempName(XAppConstants.BLANK);
++		rAssignLocalTempForm.setRqSystemId(systemId);
++		rAssignLocalTempForm.setUserId(createdByIdByRecordId);
++		rAssignLocalTempForm.setActiveYN(XAppConstants.NO);
++		rAssignLocalTempForm.setLastUpdatedBy(createdByIdByRecordId);
++		rAssignLocalTempForm.setLastUpdateDate(new java.sql.Date(System.currentTimeMillis()));
++		rAssignLocalTempForm.setLastUpdateTime(new java.sql.Time(System.currentTimeMillis()));
++		rAssignLocalTempForm.setComments(XAppConstants.TERMINATING_ACCESS_CMNT);
++		User user = new User();
++		user.setRqUserId(Integer.valueOf(createdByIdByRecordId));
++		user.setSystemId(systemId);
++		rAssignLocalTempForm.setLoggedUser(user);
++		rAssignLocalTempForm.setUpdateFlag(XAppConstants.SUCCESS_FLAG_INDICATOR);
++		RAssignLocalTempDAO.saveAssignedTemp(rAssignLocalTempForm, locale, XAppConstants.EDIT_FLAG);
++
++		removeRoles(rAssignLocalTempForm.getRqSystemId(), rAssignLocalTempForm.getRqUserTempId(),
++				rAssignLocalTempForm.getUserId());
++	}
++	
++	public String getCreatedByIdByRecordId(int recordId) {
++		XAppConnection xAppConnection = null;
++		PreparedStatement statement = null;
++		ResultSet rs = null;
++		String userId = "";
++		try {
++			xAppConnection = XAppDBConnectionManager.getInstance().getConnection();
++			String selectString = " SELECT tmpl.CREATED_BY " + " FROM GLT_RQ_USER_TMPL tmpl "
++					+ XAppConstants.UNLOCKFORSELECT + ", GLT_RQ_USERS users " + XAppConstants.UNLOCKFORSELECT
++					+ " WHERE  tmpl.RQ_USER_TMPL_ID = ? " + " AND tmpl.RQ_USER_ID=users.RQ_USER_ID ";
++			_logger.debug("selectString= " + selectString + "recordId" + recordId);
++			statement = xAppConnection.prepareStatement(selectString);
++
++			statement.setInt(1, recordId);
++			rs = statement.executeQuery();
++			while (rs.next()) {
++				userId = rs.getString("CREATED_BY");
++
++			}
++		} catch (SQLException e) {
++			_logger.debug("Exception while executing query ", e);
++		} catch (Exception e) {
++			_logger.debug(e);
++		} finally {
++			XAppUtils.closeOpenCursors(xAppConnection, statement, rs);
++		}
++		return userId;
++	}
+ }

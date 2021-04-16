@@ -1,0 +1,98 @@
+Index: source/com/greenlight/rqAdapter/dao/tables/resqTables/TableRQDownloads.java
+===================================================================
+--- source/com/greenlight/rqAdapter/dao/tables/resqTables/TableRQDownloads.java	(revision 7419)
++++ source/com/greenlight/rqAdapter/dao/tables/resqTables/TableRQDownloads.java	(revision 7420)
+@@ -1,5 +1,6 @@
+ package com.greenlight.rqAdapter.dao.tables.resqTables;
+ 
++import java.math.BigDecimal;
+ import java.sql.Timestamp;
+ 
+ public class TableRQDownloads {
+@@ -10,7 +11,7 @@
+ 	private Integer detailId;
+ 	private Integer rqSystemId = -1;
+ 	private String reportName;
+-	private Double fileSize;
++	private BigDecimal fileSize;
+ 	private String status;
+ 	private String createdBy;
+ 	private Timestamp creationDateTime;
+@@ -62,11 +63,11 @@
+ 		this.reportName = reportName;
+ 	}
+ 
+-	public Double getFileSize() {
++	public BigDecimal getFileSize() {
+ 		return fileSize;
+ 	}
+ 
+-	public void setFileSize(Double fileSize) {
++	public void setFileSize(BigDecimal fileSize) {
+ 		this.fileSize = fileSize;
+ 	}
+ 
+Index: source/com/greenlight/rqAdapter/dao/resqDAO/RDownloadsDAO.java
+===================================================================
+--- source/com/greenlight/rqAdapter/dao/resqDAO/RDownloadsDAO.java	(revision 7419)
++++ source/com/greenlight/rqAdapter/dao/resqDAO/RDownloadsDAO.java	(revision 7420)
+@@ -80,7 +80,7 @@
+ 
+ 				tableRQDownloads.setDetailId(rs.getInt(DETAIL_ID));
+ 				tableRQDownloads.setReportName(rs.getString("REPORT_NAME"));
+-				tableRQDownloads.setFileSize(rs.getDouble("FILE_SIZE"));
++				tableRQDownloads.setFileSize(rs.getBigDecimal("FILE_SIZE"));
+ 				tableRQDownloads.setStatus(rs.getString("STATUS"));
+ 
+ 				int userId = rs.getInt("CREATED_BY");
+@@ -114,7 +114,7 @@
+ 			} // end of while rs next
+ 
+ 		} catch (Exception e) {
+-			LOGGER.debug("RDownloadsDAO :: getDownloadedList :: error ::" + e.getStackTrace());
++			LOGGER.debug("RDownloadsDAO :: getDownloadedList :: error ::" ,e);
+ 		} finally {
+ 			XAppUtils.closeOpenCursors(xAppConnection, statement, rs);
+ 		}
+Index: source/com/greenlight/rqAdapter/dao/resqDAO/UserActvtTmplRptDAO.java
+===================================================================
+--- source/com/greenlight/rqAdapter/dao/resqDAO/UserActvtTmplRptDAO.java	(revision 7419)
++++ source/com/greenlight/rqAdapter/dao/resqDAO/UserActvtTmplRptDAO.java	(revision 7420)
+@@ -3468,10 +3468,10 @@
+ 					userActvtTmplRptForm.getLoggedUser().getRqUserId(), null);
+ 			if (detailId != null) {
+ 				fileNameEntered = 
+-						fileNameEntered.replace(XAppConstants.EXT_XLS, XAppConstants.UNDERSCORE + detailId+XAppConstants.EXT_XLS);
++						fileNameEntered.replace(XAppConstants.EXT_XLS, (XAppConstants.UNDERSCORE + detailId+XAppConstants.EXT_XLS));
+ 				RDownloadsDAO.updateEntryForUserActivityDownloadedFile(detailId,
+ 						XAppConstants.FILE_GENERATION_IN_PROGRESS, fileSize, null,
+-						fileNameEntered + XAppConstants.UNDERSCORE + detailId, zipFileName);
++						fileNameEntered , zipFileName);
+ 
+ 				ws = new WorkbookSettings();
+ 				ws.setLocale(locale);
+Index: source/com/greenlight/rqAdapter/ui/actions/resqActions/UserActvtTmplRptAction.java
+===================================================================
+--- source/com/greenlight/rqAdapter/ui/actions/resqActions/UserActvtTmplRptAction.java	(revision 7419)
++++ source/com/greenlight/rqAdapter/ui/actions/resqActions/UserActvtTmplRptAction.java	(revision 7420)
+@@ -140,7 +140,7 @@
+ 				String allowDownloadThroughLegacyApproach = 
+ 						SystemDAO.getSystemParamValue(XAppConstants.ALLOW_DOWNLOAD_THROUGH_LEGACY_PROCESS, 
+ 								loggedUser.getSystemId());
+-				userActvtTmplRptForm.setAllowDownloadThroughLegacyProcess("Y");
++				userActvtTmplRptForm.setAllowDownloadThroughLegacyProcess(XAppConstants.N);
+ 				if(StringUtils.isNotBlank(allowDownloadThroughLegacyApproach)) {
+ 					userActvtTmplRptForm.setAllowDownloadThroughLegacyProcess(allowDownloadThroughLegacyApproach);
+ 				}
+Index: source/resq_application.properties
+===================================================================
+--- source/resq_application.properties	(revision 7419)
++++ source/resq_application.properties	(revision 7420)
+@@ -121,4 +121,4 @@
+ include.mail.list.to.recipient.email.assignment.failure.operation=Y
+ 
+ #VES 160 Properties for user activity new download functionality
+-user.activity.downloaded.files.path=D:\\Project\\filesAndLogPath\\useractivity
+\ No newline at end of file
++user.activity.downloaded.files.path=/usr/sap/trans/EPS/in/ResQ_Dev/UA
+\ No newline at end of file

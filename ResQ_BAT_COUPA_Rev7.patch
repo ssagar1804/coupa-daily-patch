@@ -1,0 +1,13 @@
+Index: source/com/greenlight/rqAdapter/scheduler/Scheduler.java
+===================================================================
+--- source/com/greenlight/rqAdapter/scheduler/Scheduler.java	(revision 7443)
++++ source/com/greenlight/rqAdapter/scheduler/Scheduler.java	(revision 7444)
+@@ -1905,7 +1905,7 @@
+ 			statement.setInt(1, recordId);
+ 			rs = statement.executeQuery();
+ 			while (rs.next()) {
+-				userId = rs.getString("CREATED_BY");
++				userId = String.valueOf(rs.getInt("CREATED_BY"));
+ 
+ 			}
+ 		} catch (SQLException e) {

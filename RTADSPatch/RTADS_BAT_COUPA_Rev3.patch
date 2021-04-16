@@ -1,0 +1,114 @@
+Index: source/com/greenlight/rta10/executionpoints/impl/RTA10COUPAAPIGEEImpl.java
+===================================================================
+--- source/com/greenlight/rta10/executionpoints/impl/RTA10COUPAAPIGEEImpl.java	(revision 10663)
++++ source/com/greenlight/rta10/executionpoints/impl/RTA10COUPAAPIGEEImpl.java	(revision 10664)
+@@ -14,7 +14,6 @@
+ import java.text.DateFormat;
+ import java.text.SimpleDateFormat;
+ import java.util.ArrayList;
+-import java.util.Arrays;
+ import java.util.Calendar;
+ import java.util.Collections;
+ import java.util.HashMap;
+@@ -22,7 +21,6 @@
+ import java.util.List;
+ import java.util.Map;
+ import java.util.Map.Entry;
+-import java.util.Set;
+ 
+ import org.apache.commons.collections.CollectionUtils;
+ import org.apache.commons.collections.MapUtils;
+@@ -116,6 +114,7 @@
+ import com.greenlight.xplatformadapter.logs.RTADSLoggerFactory;
+ import com.greenlight.xplatformadapter.ui.forms.ColumnAcceptedValue;
+ import com.greenlight.xplatformadapter.ui.forms.FileColumnMappingForm;
++import com.greenlight.xplatformadapter.utils.CoupaConstants;
+ import com.greenlight.xplatformadapter.utils.XAppConstants;
+ import com.greenlight.xplatformadapter.utils.XAppListener;
+ import com.greenlight.xplatformadapter.utils.XAppUtils;
+@@ -765,11 +764,13 @@
+ 			}
+ 			FLATFILE_TEXTConnectionImpl connectionImpl = new FLATFILE_TEXTConnectionImpl();
+ 			connectionImpl.setConnector(tableXPAConnectors);
++			Integer waitTime = XAppUtils.getNumbericParamValueAfterParsing(CoupaConstants.RETRY_WAIT_TIME,
++					XAppConstants.VALUE_2000, XAppConstants.VALUE_50000);
+ 			for (int k = 0; k < 3; k++) {
+ 				ConnectionTestMessage connectionTestMessage = connectionImpl.testConnection(tableXPAConnectors);
+ 				if (!connectionTestMessage.isTestConnectionStatus()) {
+ 					_logger.debug("Retrying test connection: " + k);
+-					Thread.sleep(2000);
++					Thread.sleep(waitTime);
+ 					if (k == 2) {
+ 						retVal[1] = "Test connection failed::ConnectorName::" + tableXPAConnectors.getConnectorName()
+ 								+ "::ConnectorId::" + tableXPAConnectors.getConnectorId();
+Index: source/com/greenlight/xplatformadapter/utils/XAppUtils.java
+===================================================================
+--- source/com/greenlight/xplatformadapter/utils/XAppUtils.java	(revision 10663)
++++ source/com/greenlight/xplatformadapter/utils/XAppUtils.java	(revision 10664)
+@@ -2589,4 +2589,26 @@
+ 		}
+ 		return data;
+ 	}
++
++	public static Integer getNumbericParamValueAfterParsing(String paramName, Integer defaultValue,
++			Integer maxLimitExpected) {
++		_logger.debug("Inside RTADS XAppUtils getParamValue() Param name:" + paramName + " default value recieved"
++				+ defaultValue);
++		String responseStr = getApplicationProperty(paramName);
++		Integer response = defaultValue;
++
++		if (StringUtils.isNotBlank(responseStr)) {
++			try {
++				response = Integer.valueOf(responseStr.trim());
++				if (maxLimitExpected != null && maxLimitExpected <= response) {
++					return maxLimitExpected;
++				}
++			} catch (NumberFormatException e) {
++				_logger.error("Exception while formatting the value ::", e);
++			} catch (Exception e) {
++				_logger.error("Exception ::", e);
++			}
++		}
++		return response;
++	}
+ }
+Index: source/com/greenlight/xplatformadapter/utils/CoupaConstants.java
+===================================================================
+--- source/com/greenlight/xplatformadapter/utils/CoupaConstants.java	(revision 10663)
++++ source/com/greenlight/xplatformadapter/utils/CoupaConstants.java	(revision 10664)
+@@ -94,5 +94,7 @@
+ 	public static final String USER_ID = "USER_ID";
+ 	public static final String REQUEST_TYPE = "REQUEST_TYPE";
+ 	public static final String RQST_DATA = "RQST_DATA";
++	// Added for VES231 -Make User activity sftp.retry configurable
++	public static final String RETRY_WAIT_TIME="coupa.sftp.connection.retry.wait.time";
+ 
+ }
+Index: source/com/greenlight/xplatformadapter/utils/XAppConstants.java
+===================================================================
+--- source/com/greenlight/xplatformadapter/utils/XAppConstants.java	(revision 10663)
++++ source/com/greenlight/xplatformadapter/utils/XAppConstants.java	(revision 10664)
+@@ -1107,5 +1107,8 @@
+ 	public static final String SYSTEM_PARAM_USERNAME_FILTER_FOR_SEGREGATION_OF_LOGS = "sys.param.username.comparision.field";
+ 
+ 	public static final String SFTP_FILE_COLUMN_DATA_FILTER_MAPPING="sftp.file.column.data.filter.mapping";
++	
++	public static final Integer VALUE_2000 = 2000;
++	public static final Integer VALUE_50000 = 50000;
+ 
+ }
+Index: source/rtads_application.properties
+===================================================================
+--- source/rtads_application.properties	(revision 10663)
++++ source/rtads_application.properties	(revision 10664)
+@@ -857,4 +857,7 @@
+ sys.param.username.comparision.field=USER_ID_DERIVED
+ 
+ #Data column mapping User activity logs in the file
+-sftp.file.column.data.filter.mapping= 
+\ No newline at end of file
++sftp.file.column.data.filter.mapping= 
++
++#Coupa SFTP connection retry wait time(max keep it as 50000)
++coupa.sftp.connection.retry.wait.time=2000
+\ No newline at end of file

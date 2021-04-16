@@ -1,0 +1,166 @@
+Index: source/com/greenlight/rta10/provisioning/handler/RTA10CUPEAImpl1.java
+===================================================================
+--- source/com/greenlight/rta10/provisioning/handler/RTA10CUPEAImpl1.java	(revision 10671)
++++ source/com/greenlight/rta10/provisioning/handler/RTA10CUPEAImpl1.java	(revision 10672)
+@@ -6,12 +6,14 @@
+ import java.io.Serializable;
+ import java.text.SimpleDateFormat;
+ import java.util.ArrayList;
++import java.util.Calendar;
+ import java.util.Date;
+ import java.util.HashMap;
+ import java.util.List;
+ import java.util.Locale;
+ import java.util.Map;
+ 
++import org.apache.commons.lang.StringEscapeUtils;
+ import org.openspml.message.AddRequest;
+ import org.openspml.message.Attribute;
+ import org.openspml.message.Modification;
+@@ -22,7 +24,9 @@
+ import com.greenlight.rta10.adapter.provisioning.CommonUtil;
+ import com.greenlight.rta10.adapter.provisioning.ProvisioningInterface;
+ import com.greenlight.rta10.executionpoints.common.RTA10APIConstants;
+-import com.greenlight.xplatformadapter.dao.tables.TableXPAPrograms;
++import com.greenlight.xplatformadapter.dao.AuditLogsDAO;
++import com.greenlight.xplatformadapter.dao.GenericDbDao;
++import com.greenlight.xplatformadapter.dao.tables.TableRequestHeader;
+ import com.greenlight.xplatformadapter.framework.messagebundle.I18nUtil;
+ import com.greenlight.xplatformadapter.utils.ResQIntegrationUtility;
+ import com.greenlight.xplatformadapter.utils.XAppConstants;
+@@ -55,6 +59,10 @@
+ 	public SpmlResponse doAddRoles(ModifyRequest spmlRequest, String[] roles) {
+ 		SpmlResponse response = null;
+ 		response = spmlRequest.createResponse();
++		String username = null;
++		String requestDesc = "";
++		List<String> failureMsg = new ArrayList<String>();
++		SpmlResponse failureResponse = genericApi.createFailureResponse(spmlRequest.createResponse());
+ 		try {
+ 			if (roles != null && roles.length > 0) {
+ 				List failedRoles = new ArrayList();
+@@ -63,7 +71,8 @@
+ 				XAppUtils.sop("requestData::" + requestData);
+ 				boolean fetchRoleDataFromGRC = new Boolean(String.valueOf(spmlRequest.getOperationalAttribute("fetchRoleDataFromGRC").getValue())).booleanValue();
+ 				
+-				String username = spmlRequest.getIdentifierString(), firstname = username, lastname = username, emailId = username;
++				username = spmlRequest.getIdentifierString();
++				String firstname = username, lastname = username, emailId = username;
+ 				Map spmlData = null;
+ 				if (attribute == null) {
+ 					XAppUtils.sop("User details not received in GRC request");
+@@ -84,6 +93,13 @@
+ 				lastname = String.valueOf(spmlData.get(CommonUtil._LASTNAME));
+ 				emailId = String.valueOf(spmlData.get(CommonUtil._EMAIL));
+ 				
++				requestDesc = 
++						XAppConstants.REQUESTID+XAppConstants.EQUALTO+spmlRequest.getRequestId()+XAppConstants.PIPE
++						+XAppConstants.USERNAME+XAppConstants.EQUALTO+username+XAppConstants.PIPE
++						+XAppConstants.FIRSTNAME+XAppConstants.EQUALTO+firstname+XAppConstants.PIPE
++						+XAppConstants.LASTNAME+XAppConstants.EQUALTO+lastname+XAppConstants.PIPE
++						+XAppConstants.EMAILID+XAppConstants.EQUALTO+emailId;
++				
+ 				doValidations(spmlRequest, roles, response, failedRoles);
+ 				
+ 				if(failedRoles != null && failedRoles.size() == 0) {
+@@ -130,11 +146,13 @@
+ 						// response = genericApi.createSpmlResponse(response,
+ 						// flag, msg);
+ 						if (!XAppConstants.SUCCESS.equalsIgnoreCase(flag)) {
++							failureMsg.add(msg);
+ 							failedRoles.add(roles[i]);
+ 						}
+ 					} else {
+ 						failedRoles.add(roles[i]);
+-						response.setOperationalAttribute(roles[i], genericApi.createFailureResponse(spmlRequest.createResponse()));
++						failureMsg.add(failureResponse.getErrorMessage());
++						response.setOperationalAttribute(roles[i], failureResponse);
+ 						// response =
+ 						// genericApi.createFailureResponse(response);
+ 					}
+@@ -147,11 +165,15 @@
+ 					 */
+ 					genericApi.removeRolesFromGRC(firstname, lastname, username, emailId, (String[]) failedRoles.toArray(new String[0]));
+ 				}
++				prepareAuditLogEntriesForFailedRoles(spmlRequest, username, requestDesc, failureMsg, failedRoles,RTA10APIConstants.ADDROLE_R10);
+ 			}
+ 		} catch (Exception e) {
+ 			XAppUtils.sop(e);
++			String grcRequestId =  XAppUtils.parseGRCRequestId(spmlRequest.getRequestId());
+ 			for (int i = 0; i < roles.length; i++) {
+-				response.setOperationalAttribute(roles[i], genericApi.createFailureResponse(spmlRequest.createResponse()));
++				String failedRoleName =(String) roles[i];
++				response.setOperationalAttribute(failedRoleName, failureResponse);
++				putEntryInAuditLog(spmlRequest, username, requestDesc, e, grcRequestId, RTA10APIConstants.ADDROLE_R10);
+ 			}
+ 		} finally {
+ 			response.setOperationalAttribute("roles", roles);
+@@ -438,6 +460,55 @@
+ 		}
+ 		return response;
+ 	}
++	
++	
++	private String prepareAuditLogEntriesForFailedRoles(ModifyRequest spmlRequest, String username, String requestDesc,
++			List<String> failureMsg, List failedRoles,String apiName) {
++		XAppUtils.sop("Inside prepareAuditLogEntriesForFailedRoles");
++		String grcRequestId = null;
++		try {
++			if (failedRoles != null && failedRoles.size() > 0) {
++				grcRequestId = XAppUtils.parseGRCRequestId(spmlRequest.getRequestId());
++				for (int i = 0; i < failedRoles.size(); i++) {
++					Integer requestId = new Integer(
++							GenericDbDao.getNextSequence(TableRequestHeader.DATABASE_TABLE_NAME));
++					AuditLogsDAO.createAuditLogsHeader(requestId, username, apiName,
++							XAppUtils.getDatabaseInsertDate(Calendar.getInstance()),
++							XAppUtils.getDatabaseInsertDateTime(Calendar.getInstance()), null, null,
++							XAppConstants.REQ_STATUS_INITIATED, requestDesc,
++							XAppConstants.REQUEST_RECEIVED + StringEscapeUtils.unescapeXml(spmlRequest.toXml()),
++							Locale.ENGLISH, Long.valueOf(grcRequestId), this.systemId, spmlRequest.getRequestId());
++
++					AuditLogsDAO.createAuditLogsHeader(requestId, username, apiName,
++							XAppUtils.getDatabaseInsertDate(Calendar.getInstance()),
++							XAppUtils.getDatabaseInsertDateTime(Calendar.getInstance()), null,
++							XAppConstants.STATUS_FAILED, "Service failure", requestDesc, failureMsg.get(i),
++							Locale.ENGLISH, Long.valueOf(grcRequestId), this.systemId, spmlRequest.getRequestId());
++				}
++			}
++		} catch (Exception e) {
++			XAppUtils.sop("Exception inside prepareAuditLogEntriesForFailedRoles ===");
++			XAppUtils.sop(e);
++		}
++		return grcRequestId;
++	}
++
++	private void putEntryInAuditLog(ModifyRequest spmlRequest, String username, String requestDesc, Exception e,
++			String grcRequestId,String apiName) {
++		Integer requestId = new Integer(GenericDbDao.getNextSequence(TableRequestHeader.DATABASE_TABLE_NAME));
++		AuditLogsDAO.createAuditLogsHeader(requestId, username, apiName,
++				XAppUtils.getDatabaseInsertDate(Calendar.getInstance()),
++				XAppUtils.getDatabaseInsertDateTime(Calendar.getInstance()), null, null,
++				XAppConstants.REQ_STATUS_INITIATED, requestDesc,
++				XAppConstants.REQUEST_RECEIVED + StringEscapeUtils.unescapeXml(spmlRequest.toXml()), Locale.ENGLISH,
++				Long.valueOf(grcRequestId), this.systemId, spmlRequest.getRequestId());
++
++		AuditLogsDAO.createAuditLogsHeader(requestId, username, apiName,
++				XAppUtils.getDatabaseInsertDate(Calendar.getInstance()),
++				XAppUtils.getDatabaseInsertDateTime(Calendar.getInstance()), null, XAppConstants.STATUS_FAILED,
++				"Service failure", requestDesc, e.getMessage(), Locale.ENGLISH, Long.valueOf(grcRequestId),
++				this.systemId, spmlRequest.getRequestId());
++	}
+ 
+ 	/*
+ 	 * (non-Javadoc)
+Index: source/com/greenlight/xplatformadapter/utils/XAppConstants.java
+===================================================================
+--- source/com/greenlight/xplatformadapter/utils/XAppConstants.java	(revision 10671)
++++ source/com/greenlight/xplatformadapter/utils/XAppConstants.java	(revision 10672)
+@@ -1111,4 +1111,8 @@
+ 	public static final Integer VALUE_2000 = 2000;
+ 	public static final Integer VALUE_50000 = 50000;
+ 
++	public static final String REQ_STATUS_INITIATED = "INITIATED";
++	
++	public static final String REQUEST_RECEIVED="Request received  ";
++	public static final String REQUESTID="Request Id";
+ }

@@ -1,0 +1,40 @@
+Index: source/com/greenlight/rta10/executionpoints/impl/RTA10COUPAAPIGEEImpl.java
+===================================================================
+--- source/com/greenlight/rta10/executionpoints/impl/RTA10COUPAAPIGEEImpl.java	(revision 10657)
++++ source/com/greenlight/rta10/executionpoints/impl/RTA10COUPAAPIGEEImpl.java	(revision 10658)
+@@ -612,23 +612,29 @@
+ 											headerRow = genFileParser.read(counter);
+ 											if (headerRow == null)
+ 												break;
+-								//			columnNumbersToVerifiedForFiltering =
+-									//				getColumnNumberToVerifiedForFiltering(headerRow, relevantFileMappingObject);
++											columnNumbersToVerifiedForFiltering =
++													getColumnNumberToVerifiedForFiltering(headerRow, relevantFileMappingObject);
+ 										} else {
+ 											_logger.debug("Inside RTA10APIGEEImpl datarow reader...");
+ 											dataRow = genFileParser.read(counter);
+ 											if (dataRow == null)
+ 												break;
+ 										}
+-										if (dataRow != null && dataRow.size() > 0 && headerRow != null
+-												&& headerRow.size() > 0) {
++										
++										if (CollectionUtils.isNotEmpty(dataRow)
++												&& CollectionUtils.isNotEmpty(headerRow)) {
++											// IF WHETHER TO ALLOW OR NOT
++											boolean accept = shouldTheRowBeApplicableForInsertion(
++													columnNumbersToVerifiedForFiltering, dataRow);
++											if (accept) {
+ 												AuditLogData logData = new AuditLogData();
+-												String clobData = XAppUtils.buildCsv(headerRow, dataRow, progParamNames);
++												String clobData = XAppUtils.buildCsv(headerRow, dataRow,
++														progParamNames);
+ 												logData.setClobData(clobData);
+ 												logs.add(logData);
+ 											}
+ 										}
+-									 //}
++									}
+ 									if (!XAppUtils.isEmptyOrNull(logs)) {
+ 										_logger.debug("Inside RTA10APIGEEImpl before buildAuditLogs() logList.size() :"
+ 												+ logs.size());

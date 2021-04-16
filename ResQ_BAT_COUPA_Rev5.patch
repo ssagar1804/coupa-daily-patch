@@ -1,0 +1,13 @@
+Index: webContent/jsp/resqJsp/showUserActvtTmplRpt.jsp
+===================================================================
+--- webContent/jsp/resqJsp/showUserActvtTmplRpt.jsp	(revision 7432)
++++ webContent/jsp/resqJsp/showUserActvtTmplRpt.jsp	(revision 7433)
+@@ -223,7 +223,7 @@
+ 	    		<input type="button" <%=disableButton%> <%=XAppConstants.userSecurityInterface.getButtonStatus(umeUser, ResQNamePermission.RESQ_REVIEW_USR_ACTVT_RPT, request, response)%> title="<%= I18nUtil.getString(USER_LOCALE, "CROSSAPP.REVIEW") %>" value="<%= I18nUtil.getString(USER_LOCALE, "CROSSAPP.REVIEW") %>"  class="BlueButton" onClick="javascript:review(1, '<%=XAppConstants.ACTIVITY_TYPE_BASIC_AUDIT %>','<%=userActvtTmplRptForm.getFetchReportFrom()%>');" />&nbsp;&nbsp;
+ 	    		<input type="button" name="escalate" id="escalate" <%=disableButton%> <%=XAppConstants.userSecurityInterface.getButtonStatus(umeUser, ResQNamePermission.RESQ_ESCALATE_USR_ACTVT_RPT, request, response)%> title="<%= I18nUtil.getString(USER_LOCALE, "CROSSAPP.ESCALATE") %>" value="<%= I18nUtil.getString(USER_LOCALE, "CROSSAPP.ESCALATE") %>"  class="BlueButton" onClick="javascript:escalateRecords(1, '<%=XAppConstants.ACTIVITY_TYPE_BASIC_AUDIT %>','<%=userActvtTmplRptForm.getFetchReportFrom()%>');" />&nbsp;&nbsp;
+ 				<% } %>
+-				<span id='downloadReponseMsg' class='downloadReponseMsg' hidden><font color="darkgreen"><b><%= I18nUtil.getString(USER_LOCALE, "RESQ.DOWNLOADS.RESPONSE.MSG") %></b></font></span>
++				<span id='downloadReponseMsg' class='downloadReponseMsg' style="display: none;"><font color="darkgreen"><b><%= I18nUtil.getString(USER_LOCALE, "RESQ.DOWNLOADS.RESPONSE.MSG") %></b></font></span>
+ 			</td>
+ 		</TR>
+ 		<TR >
