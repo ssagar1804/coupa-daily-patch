@@ -151,6 +151,68 @@
 					<parameter parameterName="Audit Type" description="AUDIT TYPE" datatype="STRING" categorty="IN" default="res_q_order_header_list" format="res_q_order_header_list"  seqNum="7" columnName="USER_DEF_01" />
 					<parameter parameterName="Object" description="Object" datatype="STRING" categorty="IN" default="res_q_order_header_list" format="res_q_order_header_list"  seqNum="8" columnName="USER_DEF_02" />
 					<!-- End:: RES_Q_ORDER_HEADER_LIST  -->
+					
+					<!-- Start:: RES_Q_LOOKUP_LIST -->
+					<parameter parameterName="#Name::#Created Date::#Created By::#Last Updated By::#Last Updated Date" description="Log Id" datatype="String" default="" categorty="IN" format="res_q_lookup_list" seqNum="1" columnName="SETLOGID" lowparam="0::$FIRSTNAME $LASTNAME" filterBy="fullname"/>
+					<parameter parameterName="Name" description="Name" datatype="String" default="" categorty="IN" format="res_q_lookup_list" seqNum="2" columnName="" />
+					<parameter parameterName="Created By" description="Created By" datatype="String" default="" categorty="IN" format="res_q_lookup_list" seqNum="3" columnName="SETUSERNAME" />
+					<parameter parameterName="Created Date" description="Created Date" datatype="DATETIME" default="" categorty="IN" format="res_q_lookup_list" seqNum="4" columnName="SETLOGDATE" tableName="MM/dd/yy"/>
+					<parameter parameterName="Created Date" description="Created Date" datatype="DATETIME" default="" categorty="IN" format="res_q_lookup_list" seqNum="4" columnName="SETLOGTIME" tableName="MM/dd/yy"/>
+					<parameter parameterName="Last Updated By" description="Last Updated By" datatype="String" default="" categorty="IN" format="res_q_lookup_list" seqNum="5" columnName="" />
+					<parameter parameterName="Last Updated Date" description="Last Updated Date" datatype="DATETIME" default="" categorty="IN" format="res_q_lookup_list" seqNum="6" columnName="" />
+					<parameter parameterName="Audit Type" description="AUDIT TYPE" datatype="STRING" categorty="IN" default="res_q_lookup_list" format="res_q_lookup_list"  seqNum="7" columnName="USER_DEF_01" />
+					<parameter parameterName="Object" description="Object" datatype="STRING" categorty="IN" default="res_q_lookup_list" format="res_q_lookup_list"  seqNum="8" columnName="USER_DEF_02" />
+					<!-- End:: RES_Q_LOOKUP_LIST  -->
+					
+					<!-- Start:: RES_Q_LOOKUP_VALUE_LIST    -->
+					<parameter parameterName="#Name::#Created Date::#Created By::#Last Updated By::#Last Updated Date" description="Log Id" datatype="String" default="" categorty="IN" format="res_q_lookup_value_list" seqNum="1" columnName="SETLOGID" lowparam="0::$FIRSTNAME $LASTNAME" filterBy="fullname"/>
+					<parameter parameterName="Name" description="Name" datatype="String" default="" categorty="IN" format="res_q_lookup_value_list" seqNum="2" columnName="" />
+					<parameter parameterName="Created By" description="Created By" datatype="String" default="" categorty="IN" format="res_q_lookup_value_list" seqNum="3" columnName="SETUSERNAME" />
+					<parameter parameterName="Created Date" description="Created Date" datatype="DATETIME" default="" categorty="IN" format="res_q_lookup_value_list" seqNum="4" columnName="SETLOGDATE" tableName="MM/dd/yy"/>
+					<parameter parameterName="Created Date" description="Created Date" datatype="DATETIME" default="" categorty="IN" format="res_q_lookup_value_list" seqNum="5" columnName="SETLOGTIME" tableName="MM/dd/yy"/>
+					<parameter parameterName="Last Updated By" description="Last Updated By" datatype="String" default="" categorty="IN" format="res_q_lookup_value_list" seqNum="6" columnName="" />
+					<parameter parameterName="Last Updated Date" description="Last Updated Date" datatype="DATETIME" default="" categorty="IN" format="res_q_lookup_value_list" seqNum="7" columnName="" />
+					<parameter parameterName="Audit Type" description="AUDIT TYPE" datatype="STRING" categorty="IN" default="res_q_lookup_value_list" format="res_q_lookup_value_list"  seqNum="8" columnName="USER_DEF_01" />
+					<parameter parameterName="Object" description="Object" datatype="STRING" categorty="IN" default="res_q_lookup_value_list" format="res_q_lookup_value_list"  seqNum="9" columnName="USER_DEF_02" />
+					<!-- End:: RES_Q_LOOKUP_VALUE_LIST  -->
+					
+					<!-- Start:: RES_Q_TAX_RATE_LIST    -->
+					<parameter parameterName="#Tax Rate Type::#Country::#Percentage::#Created Date::#Created By::#Last Updated By::#Last Updated Date" description="Log Id" datatype="String" default="" categorty="IN" format="res_q_tax_rate_list" seqNum="1" columnName="SETLOGID" lowparam="0::$FIRSTNAME $LASTNAME" filterBy="fullname"/>
+					<parameter parameterName="Tax Rate Type" description="Tax Rate Type" datatype="String" default="" categorty="IN" format="res_q_tax_rate_list" seqNum="2" columnName="" />
+					<parameter parameterName="Country" description="Country" datatype="String" default="" categorty="IN" format="res_q_tax_rate_list" seqNum="3" columnName="" />
+					<parameter parameterName="Percentage" description="Percentage" datatype="String" default="" categorty="IN" format="res_q_tax_rate_list" seqNum="4" columnName="" />
+					<parameter parameterName="Created By" description="Created By" datatype="String" default="" categorty="IN" format="res_q_tax_rate_list" seqNum="5" columnName="SETUSERNAME" />
+					<parameter parameterName="Created Date" description="Created Date" datatype="DATETIME" default="" categorty="IN" format="res_q_tax_rate_list" seqNum="6" columnName="SETLOGDATE" tableName="MM/dd/yy"/>
+					<parameter parameterName="Created Date" description="Created Date" datatype="DATETIME" default="" categorty="IN" format="res_q_tax_rate_list" seqNum="7" columnName="SETLOGTIME" tableName="MM/dd/yy"/>
+					<parameter parameterName="Last Updated By" description="Last Updated By" datatype="String" default="" categorty="IN" format="res_q_tax_rate_list" seqNum="8" columnName="" />
+					<parameter parameterName="Last Updated Date" description="Last Updated Date" datatype="DATETIME" default="" categorty="IN" format="res_q_tax_rate_list" seqNum="9" columnName="" />
+					<parameter parameterName="Audit Type" description="AUDIT TYPE" datatype="STRING" categorty="IN" default="res_q_tax_rate_list" format="res_q_tax_rate_list"  seqNum="10" columnName="USER_DEF_01" />
+					<parameter parameterName="Object" description="Object" datatype="STRING" categorty="IN" default="res_q_tax_rate_list" format="res_q_tax_rate_list"  seqNum="11" columnName="USER_DEF_02" />
+					<!-- End:: RES_Q_TAX_RATE_LIST  -->
+					
+					<!-- Start:: RES_Q_DELEGATION_LIST  -->
+					<parameter parameterName="#Delegator::#Created Date::#Created By::#Last Updated By::#Last Updated Date" description="Log Id" datatype="String" default="" categorty="IN" format="res_q_delegation_list" seqNum="1" columnName="SETLOGID" lowparam="0::$FIRSTNAME $LASTNAME" filterBy="fullname"/>
+					<parameter parameterName="Delegator" description="Delegator" datatype="String" default="" categorty="IN" format="res_q_delegation_list" seqNum="2" columnName="" />
+					<parameter parameterName="Created By" description="Created By" datatype="String" default="" categorty="IN" format="res_q_delegation_list" seqNum="3" columnName="SETUSERNAME" />
+					<parameter parameterName="Created Date" description="Created Date" datatype="DATETIME" default="" categorty="IN" format="res_q_delegation_list" seqNum="4" columnName="SETLOGDATE" tableName="MM/dd/yy"/>
+					<parameter parameterName="Created Date" description="Created Date" datatype="DATETIME" default="" categorty="IN" format="res_q_delegation_list" seqNum="5" columnName="SETLOGTIME" tableName="MM/dd/yy"/>
+					<parameter parameterName="Last Updated By" description="Last Updated By" datatype="String" default="" categorty="IN" format="res_q_delegation_list" seqNum="6" columnName="" />
+					<parameter parameterName="Last Updated Date" description="Last Updated Date" datatype="DATETIME" default="" categorty="IN" format="res_q_delegation_list" seqNum="7" columnName="" />
+					<parameter parameterName="Audit Type" description="AUDIT TYPE" datatype="STRING" categorty="IN" default="res_q_delegation_list" format="res_q_delegation_list"  seqNum="8" columnName="USER_DEF_01" />
+					<parameter parameterName="Object" description="Object" datatype="STRING" categorty="IN" default="res_q_delegation_list" format="res_q_delegation_list"  seqNum="9" columnName="USER_DEF_02" />
+					<!-- End:: RES_Q_DELEGATION_LIST  -->
+					
+					<!-- Start:: RES_Q_USER_LIST  -->
+					<parameter parameterName="#Full Name::#Created Date::#Created By::#Last Updated By::#Last Updated Date" description="Log Id" datatype="String" default="" categorty="IN" format="res_q_user_list" seqNum="1" columnName="SETLOGID" lowparam="0::$FIRSTNAME $LASTNAME" filterBy="fullname"/>
+					<parameter parameterName="Full Name" description="Full Name" datatype="String" default="" categorty="IN" format="res_q_user_list" seqNum="2" columnName="" />
+					<parameter parameterName="Created By" description="Created By" datatype="String" default="" categorty="IN" format="res_q_user_list" seqNum="3" columnName="SETUSERNAME" />
+					<parameter parameterName="Created Date" description="Created Date" datatype="DATETIME" default="" categorty="IN" format="res_q_user_list" seqNum="4" columnName="SETLOGDATE" tableName="MM/dd/yy"/>
+					<parameter parameterName="Created Date" description="Created Date" datatype="DATETIME" default="" categorty="IN" format="res_q_user_list" seqNum="5" columnName="SETLOGTIME" tableName="MM/dd/yy"/>
+					<parameter parameterName="Last Updated By" description="Last Updated By" datatype="String" default="" categorty="IN" format="res_q_user_list" seqNum="6" columnName="" />
+					<parameter parameterName="Last Updated Date" description="Last Updated Date" datatype="DATETIME" default="" categorty="IN" format="res_q_user_list" seqNum="7" columnName="" />
+					<parameter parameterName="Audit Type" description="AUDIT TYPE" datatype="STRING" categorty="IN" default="res_q_user_list" format="res_q_user_list"  seqNum="8" columnName="USER_DEF_01" />
+					<parameter parameterName="Object" description="Object" datatype="STRING" categorty="IN" default="res_q_user_list" format="res_q_user_list"  seqNum="9" columnName="USER_DEF_02" />
+					<!-- End:: RES_Q_USER_LIST  -->
 										
 					<!--  Output Columns  -->
 					<programField fieldName="USER_DEF_01" alias="1" seqNum="1" description="Audit Area" datatype="STRING" length="100" isFilter="true" dependentFilter="USER_DEF_02"/>
