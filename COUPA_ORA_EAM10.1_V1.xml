@@ -288,7 +288,7 @@
 					
 					<!--18 Start:: RES_Q_SUPPLIER_LIST  -->
 					<parameter parameterName="#Name::#Created Date::#Created By::#Last Updated By::#Last Updated Date" description="Log Id" datatype="String" default="" categorty="IN" format="res_q_supplier_list" seqNum="1" columnName="SETLOGID" lowparam="0::$FIRSTNAME $LASTNAME" filterBy="fullname"/>
-					<parameter parameterName="Name #" description="Name" datatype="String" default="" categorty="IN" format="res_q_supplier_list" seqNum="2" columnName="" />
+					<parameter parameterName="Name" description="Name" datatype="String" default="" categorty="IN" format="res_q_supplier_list" seqNum="2" columnName="" />
 					<parameter parameterName="Created By" description="Created By" datatype="String" default="" categorty="IN" format="res_q_supplier_list" seqNum="3" columnName="SETUSERNAME" />
 					<parameter parameterName="Created Date" description="Created Date" datatype="DATETIME" default="" categorty="IN" format="res_q_supplier_list" seqNum="4" columnName="SETLOGDATE" tableName="MM/dd/yy"/>
 					<parameter parameterName="Created Date" description="Created Date" datatype="DATETIME" default="" categorty="IN" format="res_q_supplier_list" seqNum="5" columnName="SETLOGTIME" tableName="MM/dd/yy"/>
@@ -347,8 +347,8 @@
 					<!-- End:: RES_Q_REQUISITION_LINE_TEMPLATE_LIST  -->
 					
 					<!--23 Start:: RES_Q_CATALOG_LIST   -->
-					<parameter parameterName="#Name::#Created Date::#Created By::#Last Updated By::#Last Updated Date" description="Log Id" datatype="String" default="" categorty="IN" format="res_q_catalog_list" seqNum="1" columnName="SETLOGID" lowparam="0::$FIRSTNAME $LASTNAME" filterBy="fullname"/>
-					<parameter parameterName="Name" description="Name" datatype="String" default="" categorty="IN" format="res_q_catalog_list" seqNum="2" columnName="" />
+					<parameter parameterName="#Catalog Name::#Created Date::#Created By::#Last Updated By::#Last Updated Date" description="Log Id" datatype="String" default="" categorty="IN" format="res_q_catalog_list" seqNum="1" columnName="SETLOGID" lowparam="0::$FIRSTNAME $LASTNAME" filterBy="fullname"/>
+					<parameter parameterName="Catalog Name" description="Catalog Name" datatype="String" default="" categorty="IN" format="res_q_catalog_list" seqNum="2" columnName="" />
 					<parameter parameterName="Created By" description="Created By" datatype="String" default="" categorty="IN" format="res_q_catalog_list" seqNum="3" columnName="SETUSERNAME" />
 					<parameter parameterName="Created Date" description="Created Date" datatype="DATETIME" default="" categorty="IN" format="res_q_catalog_list" seqNum="4" columnName="SETLOGDATE" tableName="MM/dd/yy"/>
 					<parameter parameterName="Created Date" description="Created Date" datatype="DATETIME" default="" categorty="IN" format="res_q_catalog_list" seqNum="5" columnName="SETLOGTIME" tableName="MM/dd/yy"/>
