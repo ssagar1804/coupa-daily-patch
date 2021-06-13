@@ -1,0 +1,140 @@
+Index: source/com/greenlight/rqAdapter/dao/resqDAO/UserActvtTmplRptDAO.java
+===================================================================
+--- source/com/greenlight/rqAdapter/dao/resqDAO/UserActvtTmplRptDAO.java	(revision 7568)
++++ source/com/greenlight/rqAdapter/dao/resqDAO/UserActvtTmplRptDAO.java	(revision 7569)
+@@ -1398,6 +1398,7 @@
+ 				createXLSDataForUserDetailsHeader(systemId, s4, locale);
+ 				
+ 				int row=1;
++				Long actualRowCount=Long.valueOf(0);
+ 				xAppConnectionForClobData = XAppDBConnectionManager.getInstance().getConnection();
+ 				while((rs != null && rs.next())  && row<= XAppConstants.BATCH_UPDATE_SIZE)
+ 				{
+@@ -1425,10 +1426,10 @@
+ 						if(((statusList != null && !statusList.contains("-1") && statusList.contains(rs.getString("STATUS")==null?"":rs.getString("STATUS"))) ||(statusList == null || statusList.contains("-1"))) && ageFilter){
+ 							ArrayList<String> userDefValues = new ArrayList<String>();
+ 							setUserDefValues(rs, userDefValues);
+-							createXLSDataForUserActvty(systemId, rs, heading, values, s1, locale, isOldValNewValDataPresent,row,userActvtTmplRptForm,showSensitiveData,userDefValues,systemName,isIdBasedSystem,showReasonCode,showFFIDComment,hideReviewComments,hideDetails,true,xAppConnectionForClobData);
+-							createXLSDataForTmplActivation(systemId, rs,s2, locale,row,userDefValues);
+-							createXLSDataForRoleDetails(systemId, rs,s3, locale,row,userDefValues);
+-							createXLSDataForUserDetails(systemId, rs,s4, locale,row,userDefValues);
++							createXLSDataForUserActvty(systemId, rs, heading, values, s1, locale, isOldValNewValDataPresent,row,userActvtTmplRptForm,showSensitiveData,userDefValues,systemName,isIdBasedSystem,showReasonCode,showFFIDComment,hideReviewComments,hideDetails,true,xAppConnectionForClobData,(++actualRowCount));
++							createXLSDataForTmplActivation(systemId, rs,s2, locale,row,userDefValues,actualRowCount);
++							createXLSDataForRoleDetails(systemId, rs,s3, locale,row,userDefValues,actualRowCount);
++							createXLSDataForUserDetails(systemId, rs,s4, locale,row,userDefValues,actualRowCount);
+ 							row++;
+ 						}
+ 			      }
+@@ -1566,7 +1567,7 @@
+ 		_logger.info("UserActvtTmplRptDAO:: Finished createXLSDataForUserActvtyHeader");
+ }
+ 	
+-	public static void createXLSDataForUserActvty(Integer SystemId, ResultSet rs, List heading, List value, WritableSheet s1, java.util.Locale locale,boolean isOldValNewValDataPresent,int row,UserActvtTmplRptForm userActvtTmplRptForm,boolean showSensitiveData,List userDefValues,String systemName,boolean isIdBasedSystem,boolean showReasonCode,boolean showFFIDComment,boolean hideReviewComments,boolean hideDetails,boolean truncateClob,XAppConnection xAppConnection)
++	public static void createXLSDataForUserActvty(Integer SystemId, ResultSet rs, List heading, List value, WritableSheet s1, java.util.Locale locale,boolean isOldValNewValDataPresent,int row,UserActvtTmplRptForm userActvtTmplRptForm,boolean showSensitiveData,List userDefValues,String systemName,boolean isIdBasedSystem,boolean showReasonCode,boolean showFFIDComment,boolean hideReviewComments,boolean hideDetails,boolean truncateClob,XAppConnection xAppConnection,Long actualRowCount)
+ 				throws WriteException, SQLException{
+ 		_logger.info("UserActvtTmplRptDAO:: Start createXLSDataForUserActvty");
+ 		/* Format the Font */
+@@ -1601,7 +1602,7 @@
+ 					}
+ 				}
+ 			}
+-			Number numcell = new Number(col++,row,row,numberFormat);
++			Number numcell = new Number(col++,row,actualRowCount,numberFormat);
+ 			s1.addCell(numcell);
+ 			numcell = new Number(col++,row,rs.getInt("RQ_LOG_ID"),numberFormat);
+ 			s1.addCell(numcell);
+@@ -1773,7 +1774,7 @@
+ 		_logger.info("UserActvtTmplRptDAO:: Finished createXLSDataForTmplActivationHeader");
+ }
+ 	
+-	public static void createXLSDataForTmplActivation(Integer SystemId, ResultSet rs, WritableSheet s1, java.util.Locale locale,int row,List userDefValues) 
++	public static void createXLSDataForTmplActivation(Integer SystemId, ResultSet rs, WritableSheet s1, java.util.Locale locale,int row,List userDefValues,Long actualRowCount) 
+ 						throws WriteException, NumberFormatException, SQLException{	
+ 		_logger.info("UserActvtTmplRptDAO:: Start createXLSDataForTmplActivation");
+ 		/* Format the Font */
+@@ -1788,7 +1789,7 @@
+ 		WritableCellFormat stringFormat = new WritableCellFormat(wf1);
+ 		stringFormat.setWrap(false);
+ 		int col = 0;
+-			Number numcell = new Number(col++,row,row,numberFormat);
++			Number numcell = new Number(col++,row,actualRowCount,numberFormat);
+ 			s1.addCell(numcell);
+ 			numcell = new Number(col++,row,rs.getInt("RQ_LOG_ID"),numberFormat);
+ 			s1.addCell(numcell);
+@@ -1869,7 +1870,7 @@
+ 		}
+ 		_logger.info("UserActvtTmplRptDAO:: Finished createXLSDataForRoleDetailsHeader");
+ 	}
+-	public static void createXLSDataForRoleDetails(Integer SystemId, ResultSet rs, WritableSheet s1, java.util.Locale locale,int row,List userDefValues) 
++	public static void createXLSDataForRoleDetails(Integer SystemId, ResultSet rs, WritableSheet s1, java.util.Locale locale,int row,List userDefValues,Long actualRowCount) 
+ 									throws WriteException, SQLException{		
+ 		_logger.info("UserActvtTmplRptDAO:: Start createXLSDataForRoleDetails");
+ 		/* Format the Font */
+@@ -1891,7 +1892,7 @@
+ 				for (int i = 0; i < rolesData.size(); i++) {
+ 					List role = (List) rolesData.get(i);
+ 					if(i==0) {
+-						Number numcell = new Number(col++,row,row,numberFormat);
++						Number numcell = new Number(col++,row,actualRowCount,numberFormat);
+ 						s1.addCell(numcell);
+ 						numcell = new Number(col++,row,rs.getInt("RQ_LOG_ID"),numberFormat);
+ 						s1.addCell(numcell);
+@@ -1925,7 +1926,7 @@
+ 					s1.addCell(datacell);
+ 				}	
+ 			} else {						
+-				Number numcell = new Number(col++,row,row,numberFormat);
++				Number numcell = new Number(col++,row,actualRowCount,numberFormat);
+ 				s1.addCell(numcell);
+ 				numcell = new Number(col++,row,rs.getInt("RQ_LOG_ID"),numberFormat);
+ 				s1.addCell(numcell);
+@@ -1986,7 +1987,7 @@
+ 		s1.addCell(label);	
+ 		_logger.info("UserActvtTmplRptDAO:: Finished createXLSDataForUserDetailsHeader");
+ }
+-	public static void createXLSDataForUserDetails(Integer SystemId, ResultSet rs, WritableSheet s1, java.util.Locale locale,int row,List userDefValues) 
++	public static void createXLSDataForUserDetails(Integer SystemId, ResultSet rs, WritableSheet s1, java.util.Locale locale,int row,List userDefValues,Long actualRowCount) 
+ 							throws WriteException, SQLException{		
+ 		_logger.info("UserActvtTmplRptDAO:: Start createXLSDataForUserDetails");
+ 		/* Format the Font */
+@@ -2001,7 +2002,7 @@
+ 		WritableCellFormat stringFormat = new WritableCellFormat(wf1);
+ 		stringFormat.setWrap(false);
+ 		int col = 0;
+-			Number numcell = new Number(col++,row,row,numberFormat);
++			Number numcell = new Number(col++,row,actualRowCount,numberFormat);
+ 			s1.addCell(numcell);
+ 			numcell = new Number(col++,row,rs.getInt("RQ_LOG_ID"),numberFormat);
+ 			s1.addCell(numcell);
+@@ -3540,6 +3541,7 @@
+ 				WritableSheet s3 = null;
+ 				WritableSheet s4 = null;
+ 				int rowCountInOneSheet = 1;
++				Long actualRowCount=Long.valueOf(0);
+ 				Long totalRowsIterated = Long.valueOf(0);
+ 				Integer uaDownloadLimit = RDownloadsDAO.getUADownloadLimit(systemId,false);
+ 				xAppConnection1 = XAppDBConnectionManager.getInstance().getConnection();
+@@ -3561,7 +3563,7 @@
+ 				createXLSDataForUserDetailsHeader(systemId, s4, locale);
+ 				
+ 				while ((rs != null && rs.next()) && totalRowsIterated < uaDownloadLimit) {
+-					if (rowCountInOneSheet >=EXCEL_SHEET_MAX_ROW_LIMIT) {
++					if (rowCountInOneSheet >EXCEL_SHEET_MAX_ROW_LIMIT) {
+ 						s1 = workbook.createSheet(I18nUtil.getString(locale, "RESQ.USER.ACTIVITY") + groupedSheetNumber,
+ 								sheetNumber++);
+ 						s2 = workbook.createSheet(
+@@ -3617,10 +3619,10 @@
+ 							createXLSDataForUserActvty(systemId, rs, heading, values, s1, locale,
+ 									isOldValNewValDataPresent, rowCountInOneSheet, userActvtTmplRptForm, showSensitiveData,
+ 									userDefValues, systemName, isIdBasedSystem, showReasonCode, showFFIDComment,
+-									hideReviewComments, hideDetails, true,xAppConnection1);
+-							createXLSDataForTmplActivation(systemId, rs, s2, locale, rowCountInOneSheet, userDefValues);
+-							createXLSDataForRoleDetails(systemId, rs, s3, locale, rowCountInOneSheet, userDefValues);
+-							createXLSDataForUserDetails(systemId, rs, s4, locale, rowCountInOneSheet, userDefValues);
++									hideReviewComments, hideDetails, true,xAppConnection1,(++actualRowCount));
++							createXLSDataForTmplActivation(systemId, rs, s2, locale, rowCountInOneSheet, userDefValues,actualRowCount);
++							createXLSDataForRoleDetails(systemId, rs, s3, locale, rowCountInOneSheet, userDefValues,actualRowCount);
++							createXLSDataForUserDetails(systemId, rs, s4, locale, rowCountInOneSheet, userDefValues,actualRowCount);
+ 							rowCountInOneSheet++;
+ 							totalRowsIterated++;
+ 						}

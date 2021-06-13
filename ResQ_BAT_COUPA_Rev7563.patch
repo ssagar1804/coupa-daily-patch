@@ -1,0 +1,32 @@
+Index: source/com/greenlight/rqAdapter/dao/resqDAO/UserActvtTmplRptDAO.java
+===================================================================
+--- source/com/greenlight/rqAdapter/dao/resqDAO/UserActvtTmplRptDAO.java	(revision 7562)
++++ source/com/greenlight/rqAdapter/dao/resqDAO/UserActvtTmplRptDAO.java	(revision 7563)
+@@ -3543,9 +3543,25 @@
+ 				Long totalRowsIterated = Long.valueOf(0);
+ 				Integer uaDownloadLimit = RDownloadsDAO.getUADownloadLimit(systemId,false);
+ 				xAppConnection1 = XAppDBConnectionManager.getInstance().getConnection();
+-				while ((rs != null && rs.next()) && totalRowsIterated < uaDownloadLimit) {
++				
++				s1 = workbook.createSheet(I18nUtil.getString(locale, "RESQ.USER.ACTIVITY") + groupedSheetNumber,
++						sheetNumber++);
++				s2 = workbook.createSheet(I18nUtil.getString(locale, "RESQ.TEMPLATE.ACTIVATION") + groupedSheetNumber,
++						sheetNumber++);
++				s3 = workbook.createSheet(I18nUtil.getString(locale, "RESQ.TEMPLATE.ROLE.DETAILS") + groupedSheetNumber,
++						sheetNumber++);
++				s4 = workbook.createSheet(I18nUtil.getString(locale, "CROSSAPP.USER.DETAILS") + groupedSheetNumber,
++						sheetNumber++);
++				groupedSheetNumber++;
+ 
+-					if (rowCountInOneSheet >= EXCEL_SHEET_MAX_ROW_LIMIT || rowCountInOneSheet == 1) {
++				createXLSDataForUserActvtyHeader(systemId, heading, values, s1, locale, isOldValNewValDataPresent,
++						isIdBasedSystem, showReasonCode, showFFIDComment, hideReviewComments, hideDetails);
++				createXLSDataForTmplActivationHeader(systemId, s2, locale);
++				createXLSDataForRoleDetailsHeader(systemId, s3, locale);
++				createXLSDataForUserDetailsHeader(systemId, s4, locale);
++				
++				while ((rs != null && rs.next()) && totalRowsIterated < uaDownloadLimit) {
++					if (rowCountInOneSheet >=EXCEL_SHEET_MAX_ROW_LIMIT) {
+ 						s1 = workbook.createSheet(I18nUtil.getString(locale, "RESQ.USER.ACTIVITY") + groupedSheetNumber,
+ 								sheetNumber++);
+ 						s2 = workbook.createSheet(

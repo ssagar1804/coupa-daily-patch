@@ -1,0 +1,130 @@
+Index: webContent/jsp/resqJsp/searchImportUsersOrRoles.jsp
+===================================================================
+--- webContent/jsp/resqJsp/searchImportUsersOrRoles.jsp	(revision 7580)
++++ webContent/jsp/resqJsp/searchImportUsersOrRoles.jsp	(revision 7581)
+@@ -121,10 +121,10 @@
+ 
+ 	    	<%if("R".equals(userOrRole)){%>
+ <input type="button"   <%=XAppConstants.userSecurityInterface.getButtonStatus(umeUser, ResQNamePermission.RESQ_IMPT_ROL_IMPORT_ROLES_BTN, request, response) %> title="<%= I18nUtil.getString(USER_LOCALE, "IMPORT.ROLES") %>" value="<%= I18nUtil.getString(USER_LOCALE, "IMPORT.ROLES") %>"  class="BlueButton" onClick="javascript:submitForm('IMPORT');" />&nbsp;&nbsp;
+-<input type="button" <%=XAppConstants.userSecurityInterface.getButtonStatus(umeUser, ResQNamePermission.RESQ_IMPT_ROL_REFRESH_BTN, request, response) %> title="Refresh" value="Refresh" class="BlueButton" onClick="history.go()">
++<input type="button" <%=XAppConstants.userSecurityInterface.getButtonStatus(umeUser, ResQNamePermission.RESQ_IMPT_ROL_REFRESH_BTN, request, response) %> title="Refresh" value="Refresh" class="BlueButton" onClick="javascript:submitForm('REFRESH');">
+ 	    	<%}else{%>
+ <input type="button"  <%=XAppConstants.userSecurityInterface.getButtonStatus(umeUser, ResQNamePermission.RESQ_IMPT_USR_IMPORT_USERS_BTN, request, response) %> title="<%= I18nUtil.getString(USER_LOCALE, "IMPORT.USERS") %>" value="<%= I18nUtil.getString(USER_LOCALE, "IMPORT.USERS") %>"  class="BlueButton" onClick="javascript:submitForm('IMPORT');" />&nbsp;&nbsp;
+-<input type="button" <%=XAppConstants.userSecurityInterface.getButtonStatus(umeUser, ResQNamePermission.RESQ_IMPT_USR_REFRESH_BTN, request, response) %> title="Refresh" value="Refresh" class="BlueButton" onClick="history.go()">
++<input type="button" <%=XAppConstants.userSecurityInterface.getButtonStatus(umeUser, ResQNamePermission.RESQ_IMPT_USR_REFRESH_BTN, request, response) %> title="Refresh" value="Refresh" class="BlueButton" onClick="javascript:submitForm('REFRESH');">
+ 	    	<%}%>
+ 		</TR>
+ 		<TR >
+@@ -364,6 +364,11 @@
+ 		else if( operation == 'ERROR' ){
+ 			document.forms[0].action = 'showImportUsersOrRolesError.do?rqImportId='+val;
+ 			openPopup (document.forms[0].action, 'showInfo', '<%= I18nUtil.getString(USER_LOCALE, "RESQ.DETAILS") %>',360,600) ;
++		}else if( operation == 'REFRESH' ){
++			document.forms[0].action = 'searchImportUsersOrRoles.do';
++			document.forms[0].operation.value = 'REFRESH';
++			document.forms[0].advanceOperation.value='<%= paginationForm.getCurrentPage() %>';
++			document.forms[0].submit();
+ 		}
+ 	} //end of function submitForm
+ 	
+Index: source/com/greenlight/rqAdapter/ui/actions/resqActions/RImportUsersOrRolesAction.java
+===================================================================
+--- source/com/greenlight/rqAdapter/ui/actions/resqActions/RImportUsersOrRolesAction.java	(revision 7580)
++++ source/com/greenlight/rqAdapter/ui/actions/resqActions/RImportUsersOrRolesAction.java	(revision 7581)
+@@ -9,36 +9,24 @@
+ 
+ 
+ 
+-import java.util.Calendar;
+ import java.util.List;
+ 
+ import javax.servlet.http.HttpServletRequest;
+ import javax.servlet.http.HttpServletResponse;
+-import org.apache.log4j.Logger;
+ 
++import org.apache.log4j.Logger;
+ 
+-import com.greenlight.rqAdapter.dao.ConnectorDAO;
+ import com.greenlight.rqAdapter.dao.GenericDbMessages;
+-import com.greenlight.rqAdapter.dao.SystemDAO;
+-
+-
+-import com.greenlight.rqAdapter.dao.tables.TableXPAConnectors;
+-
+-
+ import com.greenlight.rqAdapter.dao.tables.resqTables.TableRQImport;
+ import com.greenlight.rqAdapter.exceptions.XAppActionException;
+-import com.greenlight.rqAdapter.executionpoints.connectionpool.GenericConnectionPool;
+ import com.greenlight.rqAdapter.framework.actions.XAppAction;
+ import com.greenlight.rqAdapter.framework.actions.XAppActionDetails;
+ import com.greenlight.rqAdapter.framework.messagebundle.I18nUtil;
+ import com.greenlight.rqAdapter.framework.security.User;
+ import com.greenlight.rqAdapter.logs.Log;
+-
+ import com.greenlight.rqAdapter.scheduler.RImportUsersorRolesThread;
+ import com.greenlight.rqAdapter.ui.forms.resqForms.RImportUsersOrRolesForm;
+ import com.greenlight.rqAdapter.utils.XAppUtils;
+-import com.greenlight.rta.automation.security.SecurityToken;
+-import com.greenlight.service.resq.MapClass;
+ 
+ 
+ /**
+@@ -52,6 +40,7 @@
+ 	private static Logger _logger = Log.getCustomLogger() ;
+ 	private static Thread IMPORT_USERS_ROLES_THREAD = null ;
+ 	private static ThreadGroup importGroup = new ThreadGroup("ImportGroup");
++	public  static final String ADVANCE_PAGE = "ADVANCEPAGE";
+ 
+ 	/**
+ 	 * 
+@@ -95,30 +84,27 @@
+ 					
+ 					operation = ( operation == null ? "SEARCH" : operation) ;
+ 
+-					try{
+-					
+-					_logger.info(rImportUsersOrRolesForm.getPaginationForm().getCurrentPage() + ", operation=" + operation ) ;
+-								
+-						if( operation.trim().equals("SEARCH") ){
+-							rImportUsersOrRolesForm.initilize(sortByColumn, sortBy) ;	 
+-	
+-					   }else if( operation.trim().equals("ADVANCE") ){
+-						   String advanceOperation = request.getParameter("advanceOperation") ;
+-	
+-					   rImportUsersOrRolesForm.setPagination(advanceOperation, "PARAMETERS", -1) ;
+-					   }else if( operation.trim().equals("ADVANCEPAGE") ){
+-						   String advanceOperation = request.getParameter("advanceOperation") ;
+-						   int pageNumber = Integer.parseInt(advanceOperation.trim()) ;
+-		
+-						   rImportUsersOrRolesForm.setPagination("ADVANCEPAGE", "PARAMETERS", pageNumber) ;
+-					   }	
+-					}
+-					catch(Exception e){
+-						_logger.error("RDefRolGrpAction :: execute :: searchRAdminConf :: error :: "+e.getMessage());
+-						_logger.error("RDefRolGrpAction :: execute :: searchRAdminConf :: error :: "+e.getStackTrace());
++					try {
++						_logger.info(rImportUsersOrRolesForm.getPaginationForm().getCurrentPage() + ", operation="
++								+ operation);
++						String advanceOperation = request.getParameter("advanceOperation");
++						if (operation.trim().equals("SEARCH")) {
++							rImportUsersOrRolesForm.initilize(sortByColumn, sortBy);
++						} else if (operation.trim().equals("ADVANCE")) {
++							rImportUsersOrRolesForm.setPagination(advanceOperation, "PARAMETERS", -1);
++						} else if (operation.trim().equals(ADVANCE_PAGE)) {
++							int pageNumber = Integer.parseInt(advanceOperation.trim());
++							rImportUsersOrRolesForm.setPagination(ADVANCE_PAGE, "PARAMETERS", pageNumber);
++						} else if (operation.trim().equals("REFRESH")) {
++							rImportUsersOrRolesForm.initilize(sortByColumn, sortBy);
++							Integer pageNumber = Integer.parseInt(advanceOperation.trim());
++							rImportUsersOrRolesForm.setPagination(ADVANCE_PAGE, "PARAMETERS", pageNumber);
++						}
++					} catch (Exception e) {
++						_logger.error("RDefRolGrpAction :: execute :: searchRAdminConf :: error :: " + e.getMessage());
++						_logger.error(
++								"RDefRolGrpAction :: execute :: searchRAdminConf :: error :: " + e.getStackTrace());
+ 					}
+-					
+-
+ 					request.getSession().setAttribute("RImportUsersOrRolesForm", rImportUsersOrRolesForm);
+ 					return actionDetails.getReturnPage("searchImportUsersOrRoles") ;
+ 				} //end of action id searchImportUsersOrRoles.do	
