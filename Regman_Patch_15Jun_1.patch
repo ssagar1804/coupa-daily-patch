@@ -1,0 +1,1727 @@
+Index: avmservice/src/main/java/com/greenlight/platform/avm/service/impl/ImportDataServiceImpl.java
+===================================================================
+--- avmservice/src/main/java/com/greenlight/platform/avm/service/impl/ImportDataServiceImpl.java	(revision 13007)
++++ avmservice/src/main/java/com/greenlight/platform/avm/service/impl/ImportDataServiceImpl.java	(working copy)
+@@ -39,7 +39,7 @@
+ 	@PostConstruct
+ 	public void init() {
+ 		try {
+-			this.updateInProcessImportStatusToFailed();
++		//	this.updateInProcessImportStatusToFailed();
+ 		} catch (final Exception e) {
+ 			this.logger.error(e);
+ 		}
+Index: gldao/src/main/java/com/greenlight/platform/dao/repository/DynamicWorkflowConditionRepository.java
+===================================================================
+--- gldao/src/main/java/com/greenlight/platform/dao/repository/DynamicWorkflowConditionRepository.java	(revision 13007)
++++ gldao/src/main/java/com/greenlight/platform/dao/repository/DynamicWorkflowConditionRepository.java	(working copy)
+@@ -1,17 +1,26 @@
+ package com.greenlight.platform.dao.repository;
+ 
++import java.util.Date;
++import java.util.List;
++
++import org.springframework.data.jpa.repository.Query;
++import org.springframework.data.repository.query.Param;
++
+ import com.greenlight.platform.model.domain.DynamicWorkflowCondition;
+-import com.greenlight.platform.model.domain.DynamicWorkflowConditionFilter;
+-import com.greenlight.platform.model.domain.DynamicWorkflowConfiguration;
+-import com.greenlight.platform.model.domain.DynamicWorkflowStage;
+-import com.greenlight.platform.model.domain.DynamicWorkflowStagePath;
+-import com.greenlight.platform.model.domain.DynamicWorkflowStageTransition;
+ 
+ public interface DynamicWorkflowConditionRepository extends SoftDeleteRepository<DynamicWorkflowCondition> {
+ 
+-/*	DynamicWorkflowCondition findByConfiguration(DynamicWorkflowConfiguration configuration);
+-	DynamicWorkflowCondition findByStage(DynamicWorkflowStage stage);
+-	DynamicWorkflowCondition findByConditionFilter(DynamicWorkflowConditionFilter conditionFilter);
+-	DynamicWorkflowCondition findByKey(String key);*/
++	/*
++	 * DynamicWorkflowCondition findByConfiguration(DynamicWorkflowConfiguration
++	 * configuration); DynamicWorkflowCondition findByStage(DynamicWorkflowStage
++	 * stage); DynamicWorkflowCondition
++	 * findByConditionFilter(DynamicWorkflowConditionFilter conditionFilter);
++	 * DynamicWorkflowCondition findByKey(String key);
++	 */
+ 
++	@Query("from DynamicWorkflowCondition dwcon join DynamicWorkflowConfiguration dwconf on "
++			+ "dwcon.configuration = dwconf.id where dwconf.effectiveDate <= :currentDate and dwconf.status =:status")
++	List<DynamicWorkflowCondition> findAllPastActiveDynamicWorkflowConditions(@Param("currentDate") Date currentDate,
++			@Param("status") String status);
++
+ }
+Index: gldao/src/main/java/com/greenlight/platform/dao/repository/DynamicWorkflowStageAgentResolutionRepository.java
+===================================================================
+--- gldao/src/main/java/com/greenlight/platform/dao/repository/DynamicWorkflowStageAgentResolutionRepository.java	(revision 13007)
++++ gldao/src/main/java/com/greenlight/platform/dao/repository/DynamicWorkflowStageAgentResolutionRepository.java	(working copy)
+@@ -1,15 +1,30 @@
+ package com.greenlight.platform.dao.repository;
+ 
++import java.util.List;
++
++import javax.persistence.Tuple;
++
++import org.springframework.data.jpa.repository.Query;
++import org.springframework.data.repository.query.Param;
++
+ import com.greenlight.platform.model.domain.DynamicWorkflowConfiguration;
+-import com.greenlight.platform.model.domain.DynamicWorkflowStage;
+ import com.greenlight.platform.model.domain.DynamicWorkflowStageAgentResolution;
+ 
+-public interface DynamicWorkflowStageAgentResolutionRepository extends SoftDeleteRepository<DynamicWorkflowStageAgentResolution> {
++public interface DynamicWorkflowStageAgentResolutionRepository
++		extends SoftDeleteRepository<DynamicWorkflowStageAgentResolution> {
+ 
+-/*	DynamicWorkflowStageAgentResolution findByAgentType(String agentType);
+-	DynamicWorkflowStageAgentResolution findByConfiguration(DynamicWorkflowConfiguration configuration);
+-	DynamicWorkflowStageAgentResolution findByStage(DynamicWorkflowStage stage);
+-	*/
+-	
++	/*
++	 * DynamicWorkflowStageAgentResolution findByAgentType(String agentType);
++	 * DynamicWorkflowStageAgentResolution
++	 * findByConfiguration(DynamicWorkflowConfiguration configuration);
++	 * DynamicWorkflowStageAgentResolution findByStage(DynamicWorkflowStage stage);
++	 */
+ 
++//	@Query("select distinct dwsar.agentType, dwsar.agentConstant ,dwsar.agentTypeId "
++//			+ "from DynamicWorkflowStageAgentResolution dwsar join DynamicWorkflowConfiguration dwc "
++//			+ "on dwc.id=dwsar.configuration where dwc.id=:configurationId")
++	@Query("select distinct dwsar.agentType, dwsar.agentConstant ,dwsar.agentTypeId "
++			+ "from DynamicWorkflowStageAgentResolution dwsar where dwsar.configuration=:configurationId")
++	List<Tuple> findByConfiguration(@Param("configurationId") DynamicWorkflowConfiguration configuration);
++
+ }
+Index: gldao/src/main/java/com/greenlight/platform/dao/repository/DynamicWorkflowStageTransitionRepository.java
+===================================================================
+--- gldao/src/main/java/com/greenlight/platform/dao/repository/DynamicWorkflowStageTransitionRepository.java	(revision 13007)
++++ gldao/src/main/java/com/greenlight/platform/dao/repository/DynamicWorkflowStageTransitionRepository.java	(working copy)
+@@ -1,14 +1,23 @@
+ package com.greenlight.platform.dao.repository;
+ 
+-import com.greenlight.platform.model.domain.DynamicWorkflowConfiguration;
+-import com.greenlight.platform.model.domain.DynamicWorkflowStage;
+-import com.greenlight.platform.model.domain.DynamicWorkflowStagePath;
++import org.springframework.data.jpa.repository.Query;
++import org.springframework.data.repository.query.Param;
++
+ import com.greenlight.platform.model.domain.DynamicWorkflowStageTransition;
+ 
+ public interface DynamicWorkflowStageTransitionRepository extends SoftDeleteRepository<DynamicWorkflowStageTransition> {
+ 
+-/*	DynamicWorkflowStageTransition findByConfiguration(DynamicWorkflowConfiguration configuration);
+-	DynamicWorkflowStageTransition findByStage(DynamicWorkflowStage stage);
+-	DynamicWorkflowStageTransition findByStagePath(DynamicWorkflowStagePath stagePath);
+-*/
++	/*
++	 * DynamicWorkflowStageTransition
++	 * findByConfiguration(DynamicWorkflowConfiguration configuration);
++	 * DynamicWorkflowStageTransition findByStage(DynamicWorkflowStage stage);
++	 * DynamicWorkflowStageTransition findByStagePath(DynamicWorkflowStagePath
++	 * stagePath);
++	 */
++
++	@Query("select dwc.name from DynamicWorkflowStageTransition dwst "
++			+ "join DynamicWorkflowConfiguration dwc on dwst.configuration=dwc.id join DynamicWorkflowStage dws "
++			+ "on dwst.stage=dws.id where dwst.configuration=:configurationId and dws.stageName=:currentStageName")
++	String findStageTransitionName(@Param("configurationId") Long configurationId,
++			@Param("currentStageName") String currentStageName);
+ }
+Index: gldao/src/main/java/com/greenlight/platform/dao/repository/RequestAccessRiskAnalysisRepository.java
+===================================================================
+--- gldao/src/main/java/com/greenlight/platform/dao/repository/RequestAccessRiskAnalysisRepository.java	(revision 13007)
++++ gldao/src/main/java/com/greenlight/platform/dao/repository/RequestAccessRiskAnalysisRepository.java	(working copy)
+@@ -20,7 +20,9 @@
+ 
+ 	List<RequestAccessRiskAnalysis> findAllByUserName(@Param("userName") String userName);
+ 
+-	//@Query(" delete from EmailList where userName=:userName")
++	// @Query(" delete from EmailList where userName=:userName")
+ 	void deleteAllByUserName(@Param("userName") String userName);
+ 
++	@Query("select count(1) from RequestAccessRiskAnalysis r where r.requestId=:requestId")
++	Long findCountByRequestId(@Param("requestId") Long requestId);
+ }
+Index: gldao/src/main/java/com/greenlight/platform/model/domain/RequestAccessAccount.java
+===================================================================
+--- gldao/src/main/java/com/greenlight/platform/model/domain/RequestAccessAccount.java	(revision 13007)
++++ gldao/src/main/java/com/greenlight/platform/model/domain/RequestAccessAccount.java	(working copy)
+@@ -166,7 +166,18 @@
+ 	@Column(name = "IS_PROVISION")
+ 	private String isProvision;
+ 
++	@Column(name = "WORKFLOW_PROCESS_KEY" , length=100)
++	private String processKey;
+ 
++	@Column(name = "TASK_ID" , length=100)
++	private String taskId;
++	
++	@Column(name = "TASK_STATUS" , length=100)
++	private String lineItemStatus;
++	
++	@Column(name = "TASK_STAGE_NAME" , length=100)
++	private String taskStageName;
++	
+ 	@Override
+ 	public String getName() {
+ 		return null;
+Index: gldao/src/main/java/com/greenlight/platform/model/domain/RequestAccessCatalog.java
+===================================================================
+--- gldao/src/main/java/com/greenlight/platform/model/domain/RequestAccessCatalog.java	(revision 13007)
++++ gldao/src/main/java/com/greenlight/platform/model/domain/RequestAccessCatalog.java	(working copy)
+@@ -158,7 +158,20 @@
+ 	
+ 	@Column(name = "IS_PROVISION", length = 1)
+ 	private String isProvision;
++	
++	@Column(name = "WORKFLOW_PROCESS_KEY" , length=100)
++	private String processKey;
+ 
++	@Column(name = "TASK_ID" , length=100)
++	private String taskId;
++	
++	@Column(name = "TASK_STATUS" , length=100)
++	private String lineItemStatus;
++	
++	@Column(name = "TASK_STAGE_NAME" , length=100)
++	private String taskStageName;
++
++	
+ 	@Override
+ 	public String getName() {
+ 		return null;
+Index: glworkflow/src/main/java/com/greenlight/platform/workflow/constants/DynamicWorkFlowConfigurationAgentTypeEnum.java
+===================================================================
+--- glworkflow/src/main/java/com/greenlight/platform/workflow/constants/DynamicWorkFlowConfigurationAgentTypeEnum.java	(nonexistent)
++++ glworkflow/src/main/java/com/greenlight/platform/workflow/constants/DynamicWorkFlowConfigurationAgentTypeEnum.java	(working copy)
+@@ -0,0 +1,18 @@
++package com.greenlight.platform.workflow.constants;
++
++public enum DynamicWorkFlowConfigurationAgentTypeEnum {
++
++	USER_MANAGER("User Manager"), ROLE_OWNER("Role Owner"), USER_GROUP("User Group"), IDENTITIY(
++			"Identity"), FTE_MANAGER("FTE Manager"), FF_ID_OWNER("FF ID Owner");
++
++	private final String value;
++
++	public String getValue() {
++		return value;
++	}
++
++	private DynamicWorkFlowConfigurationAgentTypeEnum(String value) {
++		this.value = value;
++	}
++
++}
+Index: glworkflow/src/main/java/com/greenlight/platform/workflow/constants/DynamicWorkFlowConfigurationEnum.java
+===================================================================
+--- glworkflow/src/main/java/com/greenlight/platform/workflow/constants/DynamicWorkFlowConfigurationEnum.java	(nonexistent)
++++ glworkflow/src/main/java/com/greenlight/platform/workflow/constants/DynamicWorkFlowConfigurationEnum.java	(working copy)
+@@ -0,0 +1,20 @@
++package com.greenlight.platform.workflow.constants;
++
++public enum DynamicWorkFlowConfigurationEnum {
++
++	ASSET("ASSET"), EQUALS_OPR("eq"), NOT_EQUALS_OPR("neq"), REQUEST_TYPE("REQUESTTYPE"), BUSINESS_ROLE(
++			"BUSINESSROLE"), BUSINESS_PROCESS("BP"), SUB_BUSINESS_PROCESS("SBP"), USER("USER"), REQUEST_CRTITCALITY(
++					"CRITICALITY"), REQUEST_SUBMITTED_BY("REQUESTCREATEDBY"), ACTIVE(
++							"Active"), ACTION("ACTION"), RISK_COUNT("RISKCOUNT"), WORK_FLOW_TYPE("workFlowType");
++
++	private final String value;
++
++	public String getValue() {
++		return value;
++	}
++
++	private DynamicWorkFlowConfigurationEnum(String value) {
++		this.value = value;
++	}
++
++}
+Index: glworkflow/src/main/java/com/greenlight/platform/workflow/dto/DynamicWorkFlowAgentConfigurationUserOrGroup.java
+===================================================================
+--- glworkflow/src/main/java/com/greenlight/platform/workflow/dto/DynamicWorkFlowAgentConfigurationUserOrGroup.java	(nonexistent)
++++ glworkflow/src/main/java/com/greenlight/platform/workflow/dto/DynamicWorkFlowAgentConfigurationUserOrGroup.java	(working copy)
+@@ -0,0 +1,11 @@
++package com.greenlight.platform.workflow.dto;
++
++import lombok.Data;
++
++@Data
++public class DynamicWorkFlowAgentConfigurationUserOrGroup {
++
++	private String name;
++	private boolean isUser;
++
++}
+Index: glworkflow/src/main/java/com/greenlight/platform/workflow/service/DynamicWorkflowService.java
+===================================================================
+--- glworkflow/src/main/java/com/greenlight/platform/workflow/service/DynamicWorkflowService.java	(revision 13007)
++++ glworkflow/src/main/java/com/greenlight/platform/workflow/service/DynamicWorkflowService.java	(working copy)
+@@ -2,6 +2,7 @@
+ 
+ import java.util.List;
+ 
++import com.greenlight.platform.model.WorkflowType;
+ import com.greenlight.platform.workflow.dto.WfDetailVO;
+ import com.greenlight.platform.workflow.dto.WfStageAndTransitionDetail;
+ 
+@@ -10,4 +11,8 @@
+ 	List<WfDetailVO> getWorkflowsWithStageCount();
+ 
+ 	WfStageAndTransitionDetail getWfStageAndTransitionDetailsByProcessId(String processId);
++
++	Object getRequestAccessChildObjBasedOnWorkFlowType(Long requestId, WorkflowType workFlowType);
++
++	String getTransitionNameFromConfigurationAndCurrentStage(Long configurationId, String currentStage);
+ }
+\ No newline at end of file
+Index: glworkflow/src/main/java/com/greenlight/platform/workflow/service/impl/DynamicWorkflowServiceImpl.java
+===================================================================
+--- glworkflow/src/main/java/com/greenlight/platform/workflow/service/impl/DynamicWorkflowServiceImpl.java	(revision 13007)
++++ glworkflow/src/main/java/com/greenlight/platform/workflow/service/impl/DynamicWorkflowServiceImpl.java	(working copy)
+@@ -3,11 +3,16 @@
+ 
+ import java.util.ArrayList;
+ import java.util.Comparator;
++import java.util.Date;
+ import java.util.HashMap;
++import java.util.HashSet;
+ import java.util.List;
+ import java.util.Map;
+ import java.util.Optional;
++import java.util.Set;
+ 
++import javax.persistence.Tuple;
++
+ import org.activiti.bpmn.model.BpmnModel;
+ import org.activiti.bpmn.model.EndEvent;
+ import org.activiti.bpmn.model.ExclusiveGateway;
+@@ -17,18 +22,46 @@
+ import org.activiti.bpmn.model.StartEvent;
+ import org.activiti.bpmn.model.UserTask;
+ import org.activiti.engine.ProcessEngine;
++import org.activiti.engine.TaskService;
+ import org.activiti.engine.impl.RepositoryServiceImpl;
+ import org.activiti.engine.impl.persistence.entity.ProcessDefinitionEntity;
+ import org.activiti.engine.repository.ProcessDefinition;
++import org.activiti.engine.task.Task;
+ import org.apache.commons.collections4.CollectionUtils;
+ import org.apache.commons.lang3.StringUtils;
++import org.apache.shiro.authc.AuthenticationException;
+ import org.springframework.beans.factory.annotation.Autowired;
+ import org.springframework.stereotype.Service;
+ 
++import com.greenlight.platform.dao.repository.DynamicWorkflowConditionRepository;
++import com.greenlight.platform.dao.repository.DynamicWorkflowStageAgentResolutionRepository;
++import com.greenlight.platform.dao.repository.DynamicWorkflowStageTransitionRepository;
++import com.greenlight.platform.dao.repository.RequestAccessAccountRepository;
++import com.greenlight.platform.dao.repository.RequestAccessCatalogRepository;
++import com.greenlight.platform.dao.repository.RequestAccessRiskAnalysisRepository;
+ import com.greenlight.platform.dao.repository.WorkflowSetupRepository;
+ import com.greenlight.platform.dto.WorkflowInformation;
+ import com.greenlight.platform.dto.WorkflowStageWithProperties;
++import com.greenlight.platform.logger.Log;
++import com.greenlight.platform.logger.Logger;
+ import com.greenlight.platform.model.WorkflowSetup;
++import com.greenlight.platform.model.WorkflowType;
++import com.greenlight.platform.model.domain.BusinessRoleEntitlement;
++import com.greenlight.platform.model.domain.DynamicWorkflowCondition;
++import com.greenlight.platform.model.domain.DynamicWorkflowConfiguration;
++import com.greenlight.platform.model.domain.RequestAccess;
++import com.greenlight.platform.model.domain.RequestAccessAccount;
++import com.greenlight.platform.model.domain.RequestAccessCatalog;
++import com.greenlight.platform.model.domain.User;
++import com.greenlight.platform.model.domain.UserAccount;
++import com.greenlight.platform.model.domain.UserGroup;
++import com.greenlight.platform.model.domain.UserGroupRole;
++import com.greenlight.platform.model.domain.UserGroupUser;
++import com.greenlight.platform.model.domain.UserRole;
++import com.greenlight.platform.security.service.UserService;
++import com.greenlight.platform.workflow.constants.DynamicWorkFlowConfigurationAgentTypeEnum;
++import com.greenlight.platform.workflow.constants.DynamicWorkFlowConfigurationEnum;
++import com.greenlight.platform.workflow.dto.DynamicWorkFlowAgentConfigurationUserOrGroup;
+ import com.greenlight.platform.workflow.dto.WfDetailVO;
+ import com.greenlight.platform.workflow.dto.WfStageAndTransitionDetail;
+ import com.greenlight.platform.workflow.dto.WfStageInformation;
+@@ -44,6 +77,33 @@
+ 	@Autowired
+ 	private ProcessEngine processEngine;
+ 
++	@Autowired
++	private RequestAccessAccountRepository requestAccessAccountRepository;
++
++	@Autowired
++	private RequestAccessCatalogRepository requestAccessCatalogRepository;
++
++	@Autowired
++	private DynamicWorkflowConditionRepository dynamicWorkflowConditionRepository;
++
++	@Autowired
++	private RequestAccessRiskAnalysisRepository requestAccessRiskAnalysisRepository;
++
++	@Autowired
++	private TaskService taskService;
++
++	@Autowired
++	private UserService userService;
++
++	@Autowired
++	private DynamicWorkflowStageTransitionRepository dynamicWorkflowStageTransitionRepository;
++
++	@Autowired
++	private DynamicWorkflowStageAgentResolutionRepository dynamicWorkflowStageAgentResolutionRepository;
++
++	@Log
++	private Logger logger;
++
+ 	@Override
+ 	public List<WfDetailVO> getWorkflowsWithStageCount() {
+ 		List<WfDetailVO> response = new ArrayList<>();
+@@ -262,4 +322,468 @@
+ 		}
+ 		return response;
+ 	}
+-}
++
++	@Override
++	public Object getRequestAccessChildObjBasedOnWorkFlowType(final Long requestId, final WorkflowType workFlowType) {
++		try {
++			if (WorkflowType.UAM_REQUEST_ACCESS_ACCOUNT.equals(workFlowType)) {
++				Optional<RequestAccessAccount> opAcnt = requestAccessAccountRepository.findById(requestId);
++				return opAcnt.isPresent() ? opAcnt.get() : null;
++			} else if (WorkflowType.UAM_REQUEST_ACCESS_CATALOG.equals(workFlowType)) {
++				Optional<RequestAccessCatalog> opCat = requestAccessCatalogRepository.findById(requestId);
++				return opCat.isPresent() ? opCat.get() : null;
++			}
++		} catch (Exception e) {
++			logger.error("Exception while fetching requestAccessChildObjBasedOnWorkFlowType", e);
++		}
++		return null;
++	}
++
++	public String startProcess(final Long requestId, final WorkflowType workFlowType) {
++
++		Object requestAccessChildObjBasedOnWorkFlowType = getRequestAccessChildObjBasedOnWorkFlowType(requestId,
++				workFlowType);
++		RequestAccessAccount requestAccessAccount = null;
++		RequestAccessCatalog requestAccessCatalog = null;
++		String processKey = null;
++
++		DynamicWorkflowConfiguration dwfConf = getDynamicWorkFlowConfigurationAfterQualifyingConfiguration(requestId,
++				workFlowType, requestAccessChildObjBasedOnWorkFlowType);
++
++		if (requestAccessChildObjBasedOnWorkFlowType != null) {
++			if (WorkflowType.UAM_REQUEST_ACCESS_ACCOUNT.equals(workFlowType)) {
++				requestAccessAccount = (RequestAccessAccount) requestAccessChildObjBasedOnWorkFlowType;
++				if (dwfConf != null && dwfConf.getWorkflowSetup() != null
++						&& StringUtils.isNotBlank(dwfConf.getWorkflowSetup().getWorkflowKey())) {
++					requestAccessAccount.setProcessKey(processKey);
++					requestAccessAccountRepository.save(requestAccessAccount);
++				}
++			} else if (WorkflowType.UAM_REQUEST_ACCESS_CATALOG.equals(workFlowType)) {
++				requestAccessCatalog = (RequestAccessCatalog) requestAccessChildObjBasedOnWorkFlowType;
++				if (dwfConf != null && dwfConf.getWorkflowSetup() != null
++						&& StringUtils.isNotBlank(dwfConf.getWorkflowSetup().getWorkflowKey())) {
++					requestAccessCatalog.setProcessKey(processKey);
++					requestAccessCatalogRepository.save(requestAccessCatalog);
++				}
++			}
++		}
++		return null;
++	}
++
++	public DynamicWorkflowConfiguration getDynamicWorkFlowConfigurationAfterQualifyingConfiguration(
++			final Long requestId, final WorkflowType workFlowType, Object requestAccessChildObjBasedOnWorkFlowType) {
++		Map<String, Object> confValuesToValidate = new HashMap<>();
++		List<DynamicWorkflowCondition> dynamicWorkflowConditions = dynamicWorkflowConditionRepository
++				.findAllPastActiveDynamicWorkflowConditions(new Date(),
++						DynamicWorkFlowConfigurationEnum.ACTIVE.getValue());
++
++		if (requestAccessChildObjBasedOnWorkFlowType == null) {
++			requestAccessChildObjBasedOnWorkFlowType = getRequestAccessChildObjBasedOnWorkFlowType(requestId,
++					workFlowType);
++		}
++
++		if (requestAccessChildObjBasedOnWorkFlowType != null) {
++			if (WorkflowType.UAM_REQUEST_ACCESS_ACCOUNT.equals(workFlowType)) {
++				RequestAccessAccount requestAccessAccount = (RequestAccessAccount) requestAccessChildObjBasedOnWorkFlowType;
++				confValuesToValidate.put(DynamicWorkFlowConfigurationEnum.ASSET.getValue(),
++						getAssetForRequestAccount(requestAccessAccount));
++				confValuesToValidate.put(DynamicWorkFlowConfigurationEnum.REQUEST_TYPE.getValue(),
++						getRequestTypeCodeFromRequestAccount(requestAccessAccount));
++				confValuesToValidate.put(DynamicWorkFlowConfigurationEnum.USER.getValue(),
++						getRequestedForFromRequestAccount(requestAccessAccount));
++				confValuesToValidate.put(DynamicWorkFlowConfigurationEnum.REQUEST_CRTITCALITY.getValue(),
++						getRequestCriticalityFromRequestAccount(requestAccessAccount));
++				confValuesToValidate.put(DynamicWorkFlowConfigurationEnum.RISK_COUNT.getValue(),
++						getSodCountFromRequestAccess(requestAccessAccount.getRequestAccess()));
++				confValuesToValidate.put(DynamicWorkFlowConfigurationEnum.ACTION.getValue(),
++						requestAccessAccount.getAction());
++
++			} else if (WorkflowType.UAM_REQUEST_ACCESS_CATALOG.equals(workFlowType)) {
++				RequestAccessCatalog requestAccessCatalog = (RequestAccessCatalog) requestAccessChildObjBasedOnWorkFlowType;
++				confValuesToValidate.put(DynamicWorkFlowConfigurationEnum.ASSET.getValue(),
++						getAssetForRequestCatalog(requestAccessCatalog));
++				confValuesToValidate.put(DynamicWorkFlowConfigurationEnum.REQUEST_TYPE.getValue(),
++						getRequestTypeCodeFromRequestCatalog(requestAccessCatalog));
++				confValuesToValidate.put(DynamicWorkFlowConfigurationEnum.USER.getValue(),
++						getRequestedForFromRequestCatalog(requestAccessCatalog));
++				confValuesToValidate.put(DynamicWorkFlowConfigurationEnum.REQUEST_CRTITCALITY.getValue(),
++						getRequestCriticalityFromRequestCatalog(requestAccessCatalog));
++				confValuesToValidate.put(DynamicWorkFlowConfigurationEnum.BUSINESS_ROLE.getValue(),
++						getBusinessRoleFromRequestCatalog(requestAccessCatalog));
++				confValuesToValidate.put(DynamicWorkFlowConfigurationEnum.BUSINESS_PROCESS.getValue(),
++						getBusinessProcessFromRequestCatalog(requestAccessCatalog));
++				confValuesToValidate.put(DynamicWorkFlowConfigurationEnum.SUB_BUSINESS_PROCESS.getValue(),
++						getSubBusinessProcessFromRequestCatalog(requestAccessCatalog));
++				confValuesToValidate.put(DynamicWorkFlowConfigurationEnum.RISK_COUNT.getValue(),
++						getSodCountFromRequestAccess(requestAccessCatalog.getRequestAccess()));
++				confValuesToValidate.put(DynamicWorkFlowConfigurationEnum.ACTION.getValue(),
++						requestAccessCatalog.getAction());
++
++			}
++
++			List<DynamicWorkflowConfiguration> dwfConfs = getResponseByValidatingConfiguration(
++					dynamicWorkflowConditions, confValuesToValidate, workFlowType);
++			return getLatestDynamicWorkFlowConfiguration(dwfConfs);
++
++		}
++		return null;
++	}
++
++	private List<String> getAssetForRequestAccount(RequestAccessAccount requestAccessAccount) {
++		List<String> response = new ArrayList<>();
++		UserAccount userAccount = requestAccessAccount.getUserAccount();
++		if (userAccount != null) {
++			if (userAccount.getAsset() != null) {
++				response.add(userAccount.getAsset().getName());
++			}
++		} else if (requestAccessAccount.getAsset() != null) {
++			response.add(requestAccessAccount.getAsset().getName());
++		}
++		return response;
++	}
++
++	private List<DynamicWorkflowConfiguration> getResponseByValidatingConfiguration(
++			List<DynamicWorkflowCondition> dynamicWorkflowConditions, Map<String, Object> confValuesToValidate,
++			final WorkflowType workFlowType) {
++
++		List<DynamicWorkflowConfiguration> response = new ArrayList<>();
++		if (dynamicWorkflowConditions != null) {
++			for (DynamicWorkflowCondition dynamicWorkflowCondition : dynamicWorkflowConditions) {
++				boolean matched = true;
++				matched = genericValidationForListStrValues(DynamicWorkFlowConfigurationEnum.ASSET.getValue(),
++						confValuesToValidate.get(DynamicWorkFlowConfigurationEnum.ASSET.getValue()), matched,
++						dynamicWorkflowCondition);
++				matched = matched
++						&& genericValidationForStrValue(DynamicWorkFlowConfigurationEnum.REQUEST_TYPE.getValue(),
++								confValuesToValidate.get(DynamicWorkFlowConfigurationEnum.REQUEST_TYPE.getValue()),
++								matched, dynamicWorkflowCondition);
++				matched = matched && genericValidationForStrValue(DynamicWorkFlowConfigurationEnum.USER.getValue(),
++						confValuesToValidate.get(DynamicWorkFlowConfigurationEnum.USER.getValue()), matched,
++						dynamicWorkflowCondition);
++				matched = matched
++						&& genericValidationForStrValue(DynamicWorkFlowConfigurationEnum.REQUEST_CRTITCALITY.getValue(),
++								confValuesToValidate
++										.get(DynamicWorkFlowConfigurationEnum.REQUEST_CRTITCALITY.getValue()),
++								matched, dynamicWorkflowCondition);
++				matched = matched && genericValidationForStrValue(DynamicWorkFlowConfigurationEnum.ACTION.getValue(),
++						confValuesToValidate.get(DynamicWorkFlowConfigurationEnum.ACTION.getValue()), matched,
++						dynamicWorkflowCondition);
++
++				matched = matched
++						&& genericValidationForNumericValue(DynamicWorkFlowConfigurationEnum.RISK_COUNT.getValue(),
++								confValuesToValidate.get(DynamicWorkFlowConfigurationEnum.RISK_COUNT.getValue()),
++								matched, dynamicWorkflowCondition);
++
++				if (WorkflowType.UAM_REQUEST_ACCESS_CATALOG.equals(workFlowType)) {
++					matched = matched
++							&& genericValidationForStrValue(DynamicWorkFlowConfigurationEnum.BUSINESS_ROLE.getValue(),
++									confValuesToValidate.get(DynamicWorkFlowConfigurationEnum.BUSINESS_ROLE.getValue()),
++									matched, dynamicWorkflowCondition);
++					matched = matched && genericValidationForStrValue(
++							DynamicWorkFlowConfigurationEnum.BUSINESS_PROCESS.getValue(),
++							confValuesToValidate.get(DynamicWorkFlowConfigurationEnum.BUSINESS_PROCESS.getValue()),
++							matched, dynamicWorkflowCondition);
++					matched = matched && genericValidationForStrValue(
++							DynamicWorkFlowConfigurationEnum.SUB_BUSINESS_PROCESS.getValue(),
++							confValuesToValidate.get(DynamicWorkFlowConfigurationEnum.SUB_BUSINESS_PROCESS.getValue()),
++							matched, dynamicWorkflowCondition);
++				}
++
++				if (matched && dynamicWorkflowCondition.getConfiguration() != null) {
++					response.add(dynamicWorkflowCondition.getConfiguration());
++				}
++			}
++		}
++		return response;
++	}
++
++	private List<String> getRequestSubmittedByForAccessAccount(RequestAccessAccount requestAccessAccount,
++			DynamicWorkflowConfiguration dynamicWorkflowConfiguration) {
++		List<String> response = new ArrayList<>();
++
++		
++		
++		return null;
++	}
++
++	private List<String> getAssetForRequestCatalog(RequestAccessCatalog requestAccessCatalog) {
++		List<String> response = new ArrayList<>();
++		if (requestAccessCatalog != null && requestAccessCatalog.getBusinessRole() != null
++				&& requestAccessCatalog.getBusinessRole().getBusinessRoleEntitlement() != null) {
++			Set<BusinessRoleEntitlement> businessRoleEntitlements = requestAccessCatalog.getBusinessRole()
++					.getBusinessRoleEntitlement();
++			for (BusinessRoleEntitlement businessRoleEntitlement : businessRoleEntitlements) {
++				if (businessRoleEntitlement != null && businessRoleEntitlement.getEntitlement() != null
++						&& businessRoleEntitlement.getEntitlement().getAsset() != null) {
++					response.add(businessRoleEntitlement.getEntitlement().getAsset().getName());
++				}
++			}
++		}
++		return response;
++	}
++
++	private String getBusinessRoleFromRequestCatalog(RequestAccessCatalog requestAccessCatalog) {
++		return (requestAccessCatalog != null && requestAccessCatalog.getBusinessRole() != null)
++				? requestAccessCatalog.getBusinessRole().getName()
++				: null;
++	}
++
++	private String getBusinessProcessFromRequestCatalog(RequestAccessCatalog requestAccessCatalog) {
++		return (requestAccessCatalog != null && requestAccessCatalog.getBusinessRole() != null
++				&& requestAccessCatalog.getBusinessRole().getBusinessProcess() != null)
++						? requestAccessCatalog.getBusinessRole().getBusinessProcess().getName()
++						: null;
++	}
++
++	private String getSubBusinessProcessFromRequestCatalog(RequestAccessCatalog requestAccessCatalog) {
++		return (requestAccessCatalog != null && requestAccessCatalog.getBusinessRole() != null
++				&& requestAccessCatalog.getBusinessRole().getBusinessSubProcess() != null)
++						? requestAccessCatalog.getBusinessRole().getBusinessSubProcess().getName()
++						: null;
++	}
++
++	private String getRequestCriticalityFromRequestAccount(RequestAccessAccount requestAccessAccount) {
++		return (requestAccessAccount != null && requestAccessAccount.getRequestAccess() != null
++				&& requestAccessAccount.getRequestAccess().getPriority() != null)
++						? requestAccessAccount.getRequestAccess().getPriority().getName()
++						: null;
++	}
++
++	private String getRequestCriticalityFromRequestCatalog(RequestAccessCatalog requestAccessCatalog) {
++		return (requestAccessCatalog != null && requestAccessCatalog.getRequestAccess() != null
++				&& requestAccessCatalog.getRequestAccess().getPriority() != null)
++						? requestAccessCatalog.getRequestAccess().getPriority().getName()
++						: null;
++	}
++
++	private Long getSodCountFromRequestAccess(RequestAccess requestAccess) {
++		return (requestAccess != null ? requestAccessRiskAnalysisRepository.findCountByRequestId(requestAccess.getId())
++				: null);
++	}
++
++	private String getRequestTypeCodeFromRequestAccount(RequestAccessAccount requestAccessAccount) {
++		return (requestAccessAccount != null && requestAccessAccount.getRequestType() != null)
++				? requestAccessAccount.getRequestType().getCode()
++				: null;
++	}
++
++	private String getRequestTypeCodeFromRequestCatalog(RequestAccessCatalog requestAccessCatalog) {
++		return (requestAccessCatalog != null && requestAccessCatalog.getRequestType() != null)
++				? requestAccessCatalog.getRequestType().getCode()
++				: null;
++	}
++
++	private String getRequestedForFromRequestAccount(RequestAccessAccount requestAccessAccount) {
++		return (requestAccessAccount != null && requestAccessAccount.getRequestedFor() != null)
++				? requestAccessAccount.getRequestedFor().getName()
++				: null;
++	}
++
++	private String getRequestedForFromRequestCatalog(RequestAccessCatalog requestAccessCatalog) {
++		return (requestAccessCatalog != null && requestAccessCatalog.getRequestedFor() != null)
++				? requestAccessCatalog.getRequestedFor().getName()
++				: null;
++	}
++
++	@SuppressWarnings("unchecked")
++	private boolean genericValidationForListStrValues(String keyToCompare, Object request, boolean matched,
++			DynamicWorkflowCondition dynamicWorkflowCondition) {
++		List<String> requestList = (List<String>) request;
++		if (matched && keyToCompare.equalsIgnoreCase(dynamicWorkflowCondition.getKey())) {
++			if (StringUtils.isNotBlank(dynamicWorkflowCondition.getVal())) {
++				if (DynamicWorkFlowConfigurationEnum.EQUALS_OPR.getValue()
++						.equalsIgnoreCase(dynamicWorkflowCondition.getOpr())) {
++					matched = (requestList.contains(dynamicWorkflowCondition.getVal()));
++				} else if (DynamicWorkFlowConfigurationEnum.NOT_EQUALS_OPR.getValue()
++						.equalsIgnoreCase(dynamicWorkflowCondition.getOpr())) {
++					matched = !requestList.contains(dynamicWorkflowCondition.getVal());
++				} else {
++					matched = false;
++				}
++			} else {
++				// Basically we won't validate if value from dynamicWorkflowCondition.getVal()
++				// is empty
++				matched = true;
++			}
++		} else {
++			matched = false;
++		}
++		return matched;
++	}
++
++	private boolean genericValidationForStrValue(String keyToCompare, Object requestObj, boolean matched,
++			DynamicWorkflowCondition dynamicWorkflowCondition) {
++		String valueToBeCompared = (String) requestObj;
++		if (matched && keyToCompare.equalsIgnoreCase(dynamicWorkflowCondition.getKey())) {
++			if (StringUtils.isNotBlank(dynamicWorkflowCondition.getVal())) {
++				if (DynamicWorkFlowConfigurationEnum.EQUALS_OPR.getValue()
++						.equalsIgnoreCase(dynamicWorkflowCondition.getOpr())) {
++					matched = (valueToBeCompared.equalsIgnoreCase(dynamicWorkflowCondition.getVal()));
++				} else if (DynamicWorkFlowConfigurationEnum.NOT_EQUALS_OPR.getValue()
++						.equalsIgnoreCase(dynamicWorkflowCondition.getOpr())) {
++					matched = !valueToBeCompared.equalsIgnoreCase(dynamicWorkflowCondition.getVal());
++				} else {
++					matched = false;
++				}
++			} else {
++				// Basically we won't validate if value from dynamicWorkflowCondition.getVal()
++				// is empty
++				matched = true;
++			}
++			return matched;
++		} else {
++			matched = false;
++		}
++		return matched;
++	}
++
++	private boolean genericValidationForNumericValue(String keyToCompare, Object requestObj, boolean matched,
++			DynamicWorkflowCondition dynamicWorkflowCondition) {
++		Long valueToBeCompared = (Long) requestObj;
++		if (matched && keyToCompare.equalsIgnoreCase(dynamicWorkflowCondition.getKey())) {
++			if (StringUtils.isNotBlank(dynamicWorkflowCondition.getVal())) {
++				if (DynamicWorkFlowConfigurationEnum.EQUALS_OPR.getValue()
++						.equalsIgnoreCase(dynamicWorkflowCondition.getOpr())) {
++					matched = (valueToBeCompared.compareTo(Long.valueOf(dynamicWorkflowCondition.getVal())) == 0);
++				} else if (DynamicWorkFlowConfigurationEnum.NOT_EQUALS_OPR.getValue()
++						.equalsIgnoreCase(dynamicWorkflowCondition.getOpr())) {
++					matched = (valueToBeCompared.compareTo(Long.valueOf(dynamicWorkflowCondition.getVal())) != 0);
++				} else {
++					matched = false;
++				}
++			} else {
++				// Basically we won't validate if value from dynamicWorkflowCondition.getVal()
++				// is empty
++				matched = true;
++			}
++			return matched;
++		} else {
++			matched = false;
++		}
++		return matched;
++	}
++
++	public void saveOrUpdateTaskDetails(String taskId, String status, String stageName, Long requestId,
++			WorkflowType workFlowType) {
++
++		Object requestAccessChildObjBasedOnWorkFlowType = getRequestAccessChildObjBasedOnWorkFlowType(requestId,
++				workFlowType);
++		if (requestAccessChildObjBasedOnWorkFlowType != null) {
++			if (WorkflowType.UAM_REQUEST_ACCESS_ACCOUNT.equals(workFlowType)) {
++				RequestAccessAccount requestAccessAccount = (RequestAccessAccount) requestAccessChildObjBasedOnWorkFlowType;
++				requestAccessAccount.setTaskId(taskId);
++				requestAccessAccount.setLineItemStatus(status);
++				requestAccessAccount.setTaskStageName(stageName);
++				requestAccessAccountRepository.save(requestAccessAccount);
++			} else if (WorkflowType.UAM_REQUEST_ACCESS_CATALOG.equals(workFlowType)) {
++				RequestAccessCatalog requestAccessCatalog = (RequestAccessCatalog) requestAccessChildObjBasedOnWorkFlowType;
++				requestAccessCatalog.setTaskId(taskId);
++				requestAccessCatalog.setLineItemStatus(status);
++				requestAccessCatalog.setTaskStageName(stageName);
++				requestAccessCatalogRepository.save(requestAccessCatalog);
++			}
++		}
++	}
++
++	private DynamicWorkflowConfiguration getLatestDynamicWorkFlowConfiguration(
++			List<DynamicWorkflowConfiguration> dynamicWorkflowConfigurations) {
++		if (dynamicWorkflowConfigurations != null) {
++			Optional<DynamicWorkflowConfiguration> latestDynamicWorkflowConfiguration = dynamicWorkflowConfigurations
++					.stream()
++					.filter(dwfConf -> dwfConf.getWorkflowSetup() != null
++							&& dwfConf.getWorkflowSetup().getWorkflowDeploy() != null)
++					.max(Comparator.comparingLong(
++							dwfConf -> dwfConf.getWorkflowSetup().getWorkflowDeploy().getDeploymentId()));
++			return latestDynamicWorkflowConfiguration.isPresent() ? latestDynamicWorkflowConfiguration.get() : null;
++		}
++		return null;
++	}
++
++	public Set<Long> getAllInboxTaskList(WorkflowType workflowType) {
++		Set<Long> response = new HashSet<>();
++		if (workflowType != null) {
++			User loggedInUser = userService.getLoggedInUser();
++			List<String> rolesAndGroupsForUser = getRolesAndGroupsForUser(loggedInUser);
++			String loggedInUserName = loggedInUser != null && StringUtils.isNotBlank(loggedInUser.getUsername())
++					? loggedInUser.getUsername()
++					: null;
++			if (StringUtils.isNotBlank(loggedInUserName)) {
++				List<Task> tasks = taskService.createTaskQuery().taskAssignee(loggedInUserName).or()
++						.taskCandidateUser(loggedInUserName).or().taskCandidateGroupIn(rolesAndGroupsForUser)
++						.processVariableValueEquals(DynamicWorkFlowConfigurationEnum.WORK_FLOW_TYPE.getValue(),
++								workflowType.toString())
++						.list();
++				if (tasks != null) {
++					for (Task task : tasks) {
++						response.add(Long.valueOf(task.getId()));
++					}
++				}
++			}
++		}
++		return response;
++	}
++
++	private List<String> getRolesAndGroupsForUser(final User user) throws AuthenticationException {
++		final List<String> roleList = new ArrayList<>();
++		if (user != null) {
++			for (final UserRole role : user.getUserRoles()) {
++				roleList.add(role.getRole().getName());
++			}
++
++			for (final UserGroupUser userGroupMapping : user.getUserGroupUsers()) {
++				final UserGroup userGroup = userGroupMapping.getUserGroup();
++				roleList.add(userGroup.getName());
++				for (final UserGroupRole userGroupRole : userGroup.getUserGroupRoles()) {
++					roleList.add(userGroupRole.getRole().getName());
++				}
++			}
++		}
++		return roleList;
++	}
++
++	@Override
++	public String getTransitionNameFromConfigurationAndCurrentStage(Long configurationId, String currentStage) {
++		String response = null;
++		try {
++			response = dynamicWorkflowStageTransitionRepository.findStageTransitionName(configurationId, currentStage);
++		} catch (Exception e) {
++			logger.error("Error while hitting query for stage transition name ", e);
++		}
++		return response;
++	}
++
++	public List<DynamicWorkFlowAgentConfigurationUserOrGroup> setAgents(final Long requestId,
++			final WorkflowType workFlowType) {
++		List<DynamicWorkFlowAgentConfigurationUserOrGroup> response = new ArrayList<>();
++
++		DynamicWorkflowConfiguration dwfconf = getDynamicWorkFlowConfigurationAfterQualifyingConfiguration(requestId,
++				workFlowType, null);
++
++		if (dwfconf != null) {
++			List<Tuple> agentResolutionTuples = dynamicWorkflowStageAgentResolutionRepository
++					.findByConfiguration(dwfconf);
++
++			if (agentResolutionTuples != null) {
++				for (Tuple agentResolutionTuple : agentResolutionTuples) {
++					DynamicWorkFlowAgentConfigurationUserOrGroup agent = new DynamicWorkFlowAgentConfigurationUserOrGroup();
++					String agentType = agentResolutionTuple.get("agentType", String.class);
++					Long agentTypeId = agentResolutionTuple.get("agentTypeId", Long.class);
++					String agentConstant = agentResolutionTuple.get("agentConstant", String.class);
++
++					if (agentTypeId == null && DynamicWorkFlowConfigurationAgentTypeEnum.ROLE_OWNER.getValue()
++							.equalsIgnoreCase(agentType)) {
++						agent.setName(agentConstant);
++						agent.setUser(true);
++						response.add(agent);
++					} else if (agentTypeId != null && DynamicWorkFlowConfigurationAgentTypeEnum.USER_GROUP.getValue()
++							.equalsIgnoreCase(agentType)) {
++						agent.setName(agentConstant);
++						agent.setUser(false);
++					}
++				}
++			}
++		}
++		return response;
++	}
++
++}
+\ No newline at end of file
+Index: regman/src/main/java/com/greenlight/platform/regman/demo/AgentConfiguration.java
+===================================================================
+--- regman/src/main/java/com/greenlight/platform/regman/demo/AgentConfiguration.java	(nonexistent)
++++ regman/src/main/java/com/greenlight/platform/regman/demo/AgentConfiguration.java	(working copy)
+@@ -0,0 +1,24 @@
++package com.greenlight.platform.regman.demo;
++
++import java.util.List;
++
++import lombok.Data;
++
++@Data
++public class AgentConfiguration {
++
++	private String asset;
++	private String assetType;
++	private String requestStr;
++	private String userStr;
++	private String userTypeStr;
++	private String requestCriticality;
++	private String businessProcess;
++	private String subBusinessProcess;
++	private String businessRole;
++	private Integer sodRiskDataCount;
++	private Integer configurationId;
++	private String stageName;
++	private List<AgentConfigurationUserOrGroup> agentConfigurationUserOrGroups;
++
++}
+Index: regman/src/main/java/com/greenlight/platform/regman/demo/AgentConfigurationUserOrGroup.java
+===================================================================
+--- regman/src/main/java/com/greenlight/platform/regman/demo/AgentConfigurationUserOrGroup.java	(nonexistent)
++++ regman/src/main/java/com/greenlight/platform/regman/demo/AgentConfigurationUserOrGroup.java	(working copy)
+@@ -0,0 +1,11 @@
++package com.greenlight.platform.regman.demo;
++
++import lombok.Data;
++
++@Data
++public class AgentConfigurationUserOrGroup {
++
++	private String name;
++	private boolean isUser;
++
++}
+Index: regman/src/main/java/com/greenlight/platform/regman/demo/CheckAssignedAgent.java
+===================================================================
+--- regman/src/main/java/com/greenlight/platform/regman/demo/CheckAssignedAgent.java	(nonexistent)
++++ regman/src/main/java/com/greenlight/platform/regman/demo/CheckAssignedAgent.java	(working copy)
+@@ -0,0 +1,345 @@
++package com.greenlight.platform.regman.demo;
++
++import java.util.ArrayList;
++import java.util.List;
++import java.util.stream.Collectors;
++
++import org.apache.commons.lang3.StringUtils;
++
++import com.greenlight.platform.model.WorkflowType;
++import com.greenlight.platform.model.domain.Asset;
++import com.greenlight.platform.model.domain.BusinessRole;
++import com.greenlight.platform.model.domain.ExtendedUser;
++import com.greenlight.platform.model.domain.Lookup;
++import com.greenlight.platform.model.domain.ModuleConfiguration;
++import com.greenlight.platform.model.domain.RequestAccess;
++import com.greenlight.platform.model.domain.RequestAccessAccount;
++import com.greenlight.platform.model.domain.RequestAccessCatalog;
++import com.greenlight.platform.model.domain.SODBusinessProcess;
++import com.greenlight.platform.model.domain.SODBusinessSubProcess;
++
++public class CheckAssignedAgent {
++
++	public static void main(String[] args) {
++
++		// Overall there are 3 agent configuration
++		// Each configuration is having 2 group 1 user
++
++		// Scenario 1
++		// Out of 3 agent 1 agent configuration data qualifies all the checks
++		//System.out.println(getUserOrGroupsWhichIsQualifyingTheConfigurationCheck(1, "UAM_REQUEST_ACCESS_ACCOUNT", 1,
++			//	"stageName1"));
++
++		// Scenario 2
++		// Out of 3 all 3 qualifies means multiple agent multiple user combination
++		 System.out.println(getUserOrGroupsWhichIsQualifyingTheConfigurationCheck(1,
++		 "UAM_REQUEST_ACCESS_ACCOUNT", 1,
++		 "stageName1"));
++
++		// Scenario 3
++		// none of the agents qualifies response is empty
++		// System.out.println(getUserOrGroupsWhichIsQualifyingTheConfigurationCheck(1,
++		// "UAM_REQUEST_ACCESS_ACCOUNT", 1,
++		// "stageName1"));
++
++		// Scenario 4
++		// similar to scenario 2 but for UAM_REQUEST_ACCESS_CATALOG
++		// System.out.println(getUserOrGroupsWhichIsQualifyingTheConfigurationCheck(1,
++		// "UAM_REQUEST_ACCESS_CATALOG", 1,
++		// "stageName1"));
++
++	}
++
++	private static List<AgentConfiguration> getDummyAgentConfiguration() {
++
++		List<AgentConfiguration> response = new ArrayList<>();
++		//for (Integer i = 1; i < 4; i++) {
++			 for (Integer j = 1; j < 4; j++) {
++			 Integer i = 1;
++			AgentConfiguration agentConfObj = new AgentConfiguration();
++			agentConfObj.setConfigurationId(i);
++			agentConfObj.setAsset("asset" + i);
++			agentConfObj.setAssetType("assetType" + i);
++			agentConfObj.setBusinessProcess("businessProcess" + i);
++			agentConfObj.setBusinessRole("businessRole" + i);
++			agentConfObj.setSodRiskDataCount(10);
++			agentConfObj.setRequestCriticality("requestCriticality" + i);
++			agentConfObj.setRequestStr("requestStr" + i);
++			agentConfObj.setStageName("stageName" + i);
++			agentConfObj.setSubBusinessProcess("subBusinessProcess" + i);
++			agentConfObj.setUserStr("userStr" + i);
++			agentConfObj.setUserTypeStr("userTypeStr" + i);
++
++			List<AgentConfigurationUserOrGroup> agentConfigurationUserOrGroups = new ArrayList<>();
++			for (Integer k = 1; k < 4; k++) {
++				AgentConfigurationUserOrGroup agentConfigurationUserOrGroup = new AgentConfigurationUserOrGroup();
++			//	agentConfigurationUserOrGroup.setName("user" + k + "agent" + i);
++				agentConfigurationUserOrGroup.setName("user" + k + "agent" + j);
++				agentConfigurationUserOrGroup.setUser(k % 2 == 0);
++				agentConfigurationUserOrGroups.add(agentConfigurationUserOrGroup);
++			}
++
++			agentConfObj.setAgentConfigurationUserOrGroups(agentConfigurationUserOrGroups);
++			response.add(agentConfObj);
++		}
++		return response;
++	}
++
++	private static List<AgentConfigurationUserOrGroup> getUserOrGroupsWhichIsQualifyingTheConfigurationCheck(
++			Integer requestId, String workFlowType, Integer configurationId, String stageName) {
++
++		List<AgentConfigurationUserOrGroup> response = new ArrayList<>();
++		List<AgentConfiguration> agentConfigurations = getFilteredAgentConfiguration(configurationId, stageName);
++
++		// TODO: Need to confirm
++		// userName,userTypeStr,requestStr,sodRiskCount,RequestCriticality
++		String assetName = null;
++		String assetType = null;
++		String requestStr = null;
++		String userName = null;
++		String userTypeStr = null;
++		String businessRole = null;
++		String businessProcess = null;
++		String subBusinessProcess = null;
++
++		if (WorkflowType.UAM_REQUEST_ACCESS_ACCOUNT.toString().equals(workFlowType)) {
++			System.out.println("Validating " + WorkflowType.UAM_REQUEST_ACCESS_ACCOUNT);
++			RequestAccessAccount requestAccessAccount = getRequestAccessAccount(requestId, workFlowType);
++			if (requestAccessAccount != null) {
++				Asset assetObj = requestAccessAccount.getAsset();
++				if (assetObj != null) {
++					assetName = assetObj.getName();
++					Lookup assetTypeObj = assetObj.getAssetType();
++					if (assetTypeObj != null) {
++						assetType = assetTypeObj.getType() != null ? assetTypeObj.getType() : null;
++					}
++				}
++
++				if (requestAccessAccount.getRequestAccess() != null
++						&& requestAccessAccount.getRequestAccess().getReasonCode() != null) {
++					requestStr = requestAccessAccount.getRequestAccess().getReasonCode().getName();
++				}
++
++				userName = requestAccessAccount.getRequestedFor() != null
++						? requestAccessAccount.getRequestedFor().getName()
++						: null;
++				userTypeStr = requestAccessAccount.getRequestedFor() != null
++						? requestAccessAccount.getRequestedFor().getUserType()
++						: null;
++
++				response.addAll(validateConfigurationAndReturnUserOrGroupList(assetName, assetType, requestStr,
++						userName, userTypeStr, null, null, null, agentConfigurations, workFlowType));
++			}
++
++		} else if (WorkflowType.UAM_REQUEST_ACCESS_CATALOG.toString().equals(workFlowType)) {
++			System.out.println("Validating " + WorkflowType.UAM_REQUEST_ACCESS_CATALOG);
++			RequestAccessCatalog requestAccessCatalog = getRequestAccessCatalog(requestId, workFlowType);
++			if (requestAccessCatalog != null) {
++				Asset assetObj = requestAccessCatalog.getAsset();
++				if (assetObj != null) {
++					assetName = assetObj.getName();
++					Lookup assetTypeObj = assetObj.getAssetType();
++					if (assetTypeObj != null) {
++						assetType = assetTypeObj.getType() != null ? assetTypeObj.getType() : null;
++					}
++				}
++
++				userName = requestAccessCatalog.getRequestedFor() != null
++						? requestAccessCatalog.getRequestedFor().getName()
++						: null;
++				userTypeStr = requestAccessCatalog.getRequestedFor() != null
++						? requestAccessCatalog.getRequestedFor().getUserType()
++						: null;
++
++				if (requestAccessCatalog.getRequestAccess() != null
++						&& requestAccessCatalog.getRequestAccess().getReasonCode() != null) {
++					requestStr = requestAccessCatalog.getRequestAccess().getReasonCode().getName();
++				}
++
++				BusinessRole businessRoleObj = requestAccessCatalog.getBusinessRole();
++
++				businessRole = businessRoleObj.getName();
++				businessProcess = businessRoleObj.getBusinessProcess() != null
++						? businessRoleObj.getBusinessProcess().getName()
++						: null;
++				subBusinessProcess = businessRoleObj.getBusinessSubProcess() != null
++						? businessRoleObj.getBusinessSubProcess().getName()
++						: null;
++
++				response.addAll(validateConfigurationAndReturnUserOrGroupList(assetName, assetType, requestStr,
++						userName, userTypeStr, businessProcess, subBusinessProcess, businessRole, agentConfigurations,
++						workFlowType));
++
++			}
++		}
++
++		return response;
++	}
++
++	private static RequestAccessAccount getRequestAccessAccount(Integer requestId, String workFlowType) {
++
++		List<RequestAccessAccount> dummyRequestAccessAccounts = getDummyRequestAccessAccount();
++
++		return dummyRequestAccessAccounts
++				.stream().filter(x -> (x != null && Long.valueOf(requestId).equals(x.getId())
++						&& x.getWorkflowType() != null && x.getWorkflowType().toString().equals(workFlowType)))
++				.findAny().orElse(null);
++	}
++
++	private static RequestAccessCatalog getRequestAccessCatalog(Integer requestId, String workFlowType) {
++
++		List<RequestAccessCatalog> dummyRequestAccessCatalogs = getDummyRequestAccessCatalog();
++		return dummyRequestAccessCatalogs
++				.stream().filter(x -> (x != null && Long.valueOf(requestId).equals(x.getId())
++						&& x.getWorkflowType() != null && x.getWorkflowType().toString().equals(workFlowType)))
++				.findAny().orElse(null);
++	}
++
++	private static List<AgentConfiguration> getFilteredAgentConfiguration(Integer configurationId, String stageName) {
++
++		List<AgentConfiguration> dummyAgentConfigurations = getDummyAgentConfiguration();
++		return dummyAgentConfigurations
++				.stream().filter(x -> (x != null && configurationId.equals(x.getConfigurationId())
++						&& x.getStageName() != null && x.getStageName().equals(stageName)))
++				.collect(Collectors.toList());
++	}
++
++	private static List<RequestAccessAccount> getDummyRequestAccessAccount() {
++
++		List<RequestAccessAccount> response = new ArrayList<>();
++		for (int i = 0; i < 3; i++) {
++			RequestAccessAccount requestAccessAccount = new RequestAccessAccount();
++			requestAccessAccount.setId(Long.valueOf(i));
++			Asset asset = new Asset();
++			asset.setName("asset" + i);
++			Lookup lookup = new Lookup();
++			lookup.setType("assetType" + i);
++			asset.setAssetType(lookup);
++			requestAccessAccount.setAsset(asset);
++
++			RequestAccess requestAccess = new RequestAccess();
++			ModuleConfiguration reasonCode = new ModuleConfiguration();
++			reasonCode.setName("requestStr" + i);
++			requestAccess.setReasonCode(reasonCode);
++			requestAccessAccount.setRequestAccess(requestAccess);
++
++			ExtendedUser requestedFor = new ExtendedUser();
++			requestedFor.setName("userStr" + i);
++			requestedFor.setUserType("userTypeStr" + i);
++			requestAccessAccount.setRequestedFor(requestedFor);
++
++			response.add(requestAccessAccount);
++		}
++		return response;
++
++	}
++
++	private static List<RequestAccessCatalog> getDummyRequestAccessCatalog() {
++		List<RequestAccessCatalog> response = new ArrayList<>();
++		for (int i = 1; i < 3; i++) {
++			RequestAccessCatalog requestAccessCatalog = new RequestAccessCatalog();
++			requestAccessCatalog.setId(Long.valueOf(i));
++
++			Asset asset = new Asset();
++			asset.setName("asset" + i);
++			Lookup lookup = new Lookup();
++			lookup.setType("assetType" + i);
++			asset.setAssetType(lookup);
++			requestAccessCatalog.setAsset(asset);
++
++			ExtendedUser requestedFor = new ExtendedUser();
++
++			requestedFor.setName("userStr" + i);
++			requestedFor.setUserType("userTypeStr" + i);
++			requestAccessCatalog.setRequestedFor(requestedFor);
++
++			RequestAccess requestAccess = new RequestAccess();
++			ModuleConfiguration reasonCode = new ModuleConfiguration();
++			reasonCode.setName("requestStr" + i);
++			requestAccess.setReasonCode(reasonCode);
++			requestAccessCatalog.setRequestAccess(requestAccess);
++
++			BusinessRole businessRole = new BusinessRole();
++			businessRole.setName("businessRole" + i);
++			SODBusinessProcess businessProcess = new SODBusinessProcess();
++			businessProcess.setName("businessProcess" + i);
++			businessRole.setBusinessProcess(businessProcess);
++			SODBusinessSubProcess businessSubProcess = new SODBusinessSubProcess();
++			businessSubProcess.setName("subBusinessProcess" + i);
++			businessRole.setBusinessSubProcess(businessSubProcess);
++			requestAccessCatalog.setBusinessRole(businessRole);
++
++			response.add(requestAccessCatalog);
++		}
++		return response;
++	}
++
++	private static List<AgentConfigurationUserOrGroup> validateConfigurationAndReturnUserOrGroupList(String asset,
++			String assetType, String requestStr, String userStr, String userTypeStr, String businessProcess,
++			String subBusinessProcess, String businessRole, List<AgentConfiguration> agentConfigurations,
++			String workFlowType) {
++
++		List<AgentConfigurationUserOrGroup> response = new ArrayList<>();
++		for (AgentConfiguration agentConfiguration : agentConfigurations) {
++
++			boolean matched = true;
++			if (StringUtils.isNotBlank(agentConfiguration.getAsset())
++					&& !agentConfiguration.getAsset().equalsIgnoreCase(asset)) {
++				matched = false;
++			}
++			if (StringUtils.isNotBlank(agentConfiguration.getAssetType())
++					&& !agentConfiguration.getAssetType().equalsIgnoreCase(assetType)) {
++				matched = false;
++			}
++
++			if (StringUtils.isNotBlank(agentConfiguration.getRequestStr())
++					&& !agentConfiguration.getRequestStr().equalsIgnoreCase(requestStr)) {
++				matched = false;
++			}
++
++			if (StringUtils.isNotBlank(agentConfiguration.getUserStr())
++					&& !agentConfiguration.getUserStr().equalsIgnoreCase(userStr)) {
++				matched = false;
++			}
++
++			if (StringUtils.isNotBlank(agentConfiguration.getUserTypeStr())
++					&& !agentConfiguration.getUserTypeStr().equalsIgnoreCase(userTypeStr)) {
++				matched = false;
++			}
++
++			if (WorkflowType.UAM_REQUEST_ACCESS_CATALOG.toString().equals(workFlowType)) {
++				if (StringUtils.isNotBlank(agentConfiguration.getBusinessRole())
++						&& !agentConfiguration.getBusinessRole().equalsIgnoreCase(businessRole)) {
++					matched = false;
++				}
++
++				if (StringUtils.isNotBlank(agentConfiguration.getSubBusinessProcess())
++						&& !agentConfiguration.getSubBusinessProcess().equalsIgnoreCase(subBusinessProcess)) {
++					matched = false;
++				}
++				if (StringUtils.isNotBlank(agentConfiguration.getBusinessProcess())
++						&& !agentConfiguration.getBusinessProcess().equalsIgnoreCase(businessProcess)) {
++					matched = false;
++				}
++			}
++
++			// if (StringUtils.isNotBlank(agentConfiguration.getRequestCriticality())
++			// &&
++			// !agentConfiguration.getRequestCriticality().equalsIgnoreCase(requestCriticality))
++			// {
++			// matched = false;
++			// }
++
++			// if (agentConfiguration.getSodRiskDataCount() != null
++			// && !agentConfiguration.getSodRiskDataCount().equals(sodRiskDataCount)) {
++			// matched = false;
++			// }
++
++			if (matched) {
++				response.addAll(agentConfiguration.getAgentConfigurationUserOrGroups());
++			}
++		}
++
++		return response;
++	}
++}
+Index: regman/src/main/java/com/greenlight/platform/regman/demo/AgentConfiguration.java
+===================================================================
+--- regman/src/main/java/com/greenlight/platform/regman/demo/AgentConfiguration.java	(nonexistent)
++++ regman/src/main/java/com/greenlight/platform/regman/demo/AgentConfiguration.java	(working copy)
+@@ -0,0 +1,24 @@
++package com.greenlight.platform.regman.demo;
++
++import java.util.List;
++
++import lombok.Data;
++
++@Data
++public class AgentConfiguration {
++
++	private String asset;
++	private String assetType;
++	private String requestStr;
++	private String userStr;
++	private String userTypeStr;
++	private String requestCriticality;
++	private String businessProcess;
++	private String subBusinessProcess;
++	private String businessRole;
++	private Integer sodRiskDataCount;
++	private Integer configurationId;
++	private String stageName;
++	private List<AgentConfigurationUserOrGroup> agentConfigurationUserOrGroups;
++
++}
+Index: regman/src/main/java/com/greenlight/platform/regman/demo/AgentConfigurationUserOrGroup.java
+===================================================================
+--- regman/src/main/java/com/greenlight/platform/regman/demo/AgentConfigurationUserOrGroup.java	(nonexistent)
++++ regman/src/main/java/com/greenlight/platform/regman/demo/AgentConfigurationUserOrGroup.java	(working copy)
+@@ -0,0 +1,11 @@
++package com.greenlight.platform.regman.demo;
++
++import lombok.Data;
++
++@Data
++public class AgentConfigurationUserOrGroup {
++
++	private String name;
++	private boolean isUser;
++
++}
+Index: regman/src/main/java/com/greenlight/platform/regman/demo/CheckAssignedAgent.java
+===================================================================
+--- regman/src/main/java/com/greenlight/platform/regman/demo/CheckAssignedAgent.java	(nonexistent)
++++ regman/src/main/java/com/greenlight/platform/regman/demo/CheckAssignedAgent.java	(working copy)
+@@ -0,0 +1,345 @@
++package com.greenlight.platform.regman.demo;
++
++import java.util.ArrayList;
++import java.util.List;
++import java.util.stream.Collectors;
++
++import org.apache.commons.lang3.StringUtils;
++
++import com.greenlight.platform.model.WorkflowType;
++import com.greenlight.platform.model.domain.Asset;
++import com.greenlight.platform.model.domain.BusinessRole;
++import com.greenlight.platform.model.domain.ExtendedUser;
++import com.greenlight.platform.model.domain.Lookup;
++import com.greenlight.platform.model.domain.ModuleConfiguration;
++import com.greenlight.platform.model.domain.RequestAccess;
++import com.greenlight.platform.model.domain.RequestAccessAccount;
++import com.greenlight.platform.model.domain.RequestAccessCatalog;
++import com.greenlight.platform.model.domain.SODBusinessProcess;
++import com.greenlight.platform.model.domain.SODBusinessSubProcess;
++
++public class CheckAssignedAgent {
++
++	public static void main(String[] args) {
++
++		// Overall there are 3 agent configuration
++		// Each configuration is having 2 group 1 user
++
++		// Scenario 1
++		// Out of 3 agent 1 agent configuration data qualifies all the checks
++		//System.out.println(getUserOrGroupsWhichIsQualifyingTheConfigurationCheck(1, "UAM_REQUEST_ACCESS_ACCOUNT", 1,
++			//	"stageName1"));
++
++		// Scenario 2
++		// Out of 3 all 3 qualifies means multiple agent multiple user combination
++		 System.out.println(getUserOrGroupsWhichIsQualifyingTheConfigurationCheck(1,
++		 "UAM_REQUEST_ACCESS_ACCOUNT", 1,
++		 "stageName1"));
++
++		// Scenario 3
++		// none of the agents qualifies response is empty
++		// System.out.println(getUserOrGroupsWhichIsQualifyingTheConfigurationCheck(1,
++		// "UAM_REQUEST_ACCESS_ACCOUNT", 1,
++		// "stageName1"));
++
++		// Scenario 4
++		// similar to scenario 2 but for UAM_REQUEST_ACCESS_CATALOG
++		// System.out.println(getUserOrGroupsWhichIsQualifyingTheConfigurationCheck(1,
++		// "UAM_REQUEST_ACCESS_CATALOG", 1,
++		// "stageName1"));
++
++	}
++
++	private static List<AgentConfiguration> getDummyAgentConfiguration() {
++
++		List<AgentConfiguration> response = new ArrayList<>();
++		//for (Integer i = 1; i < 4; i++) {
++			 for (Integer j = 1; j < 4; j++) {
++			 Integer i = 1;
++			AgentConfiguration agentConfObj = new AgentConfiguration();
++			agentConfObj.setConfigurationId(i);
++			agentConfObj.setAsset("asset" + i);
++			agentConfObj.setAssetType("assetType" + i);
++			agentConfObj.setBusinessProcess("businessProcess" + i);
++			agentConfObj.setBusinessRole("businessRole" + i);
++			agentConfObj.setSodRiskDataCount(10);
++			agentConfObj.setRequestCriticality("requestCriticality" + i);
++			agentConfObj.setRequestStr("requestStr" + i);
++			agentConfObj.setStageName("stageName" + i);
++			agentConfObj.setSubBusinessProcess("subBusinessProcess" + i);
++			agentConfObj.setUserStr("userStr" + i);
++			agentConfObj.setUserTypeStr("userTypeStr" + i);
++
++			List<AgentConfigurationUserOrGroup> agentConfigurationUserOrGroups = new ArrayList<>();
++			for (Integer k = 1; k < 4; k++) {
++				AgentConfigurationUserOrGroup agentConfigurationUserOrGroup = new AgentConfigurationUserOrGroup();
++			//	agentConfigurationUserOrGroup.setName("user" + k + "agent" + i);
++				agentConfigurationUserOrGroup.setName("user" + k + "agent" + j);
++				agentConfigurationUserOrGroup.setUser(k % 2 == 0);
++				agentConfigurationUserOrGroups.add(agentConfigurationUserOrGroup);
++			}
++
++			agentConfObj.setAgentConfigurationUserOrGroups(agentConfigurationUserOrGroups);
++			response.add(agentConfObj);
++		}
++		return response;
++	}
++
++	private static List<AgentConfigurationUserOrGroup> getUserOrGroupsWhichIsQualifyingTheConfigurationCheck(
++			Integer requestId, String workFlowType, Integer configurationId, String stageName) {
++
++		List<AgentConfigurationUserOrGroup> response = new ArrayList<>();
++		List<AgentConfiguration> agentConfigurations = getFilteredAgentConfiguration(configurationId, stageName);
++
++		// TODO: Need to confirm
++		// userName,userTypeStr,requestStr,sodRiskCount,RequestCriticality
++		String assetName = null;
++		String assetType = null;
++		String requestStr = null;
++		String userName = null;
++		String userTypeStr = null;
++		String businessRole = null;
++		String businessProcess = null;
++		String subBusinessProcess = null;
++
++		if (WorkflowType.UAM_REQUEST_ACCESS_ACCOUNT.toString().equals(workFlowType)) {
++			System.out.println("Validating " + WorkflowType.UAM_REQUEST_ACCESS_ACCOUNT);
++			RequestAccessAccount requestAccessAccount = getRequestAccessAccount(requestId, workFlowType);
++			if (requestAccessAccount != null) {
++				Asset assetObj = requestAccessAccount.getAsset();
++				if (assetObj != null) {
++					assetName = assetObj.getName();
++					Lookup assetTypeObj = assetObj.getAssetType();
++					if (assetTypeObj != null) {
++						assetType = assetTypeObj.getType() != null ? assetTypeObj.getType() : null;
++					}
++				}
++
++				if (requestAccessAccount.getRequestAccess() != null
++						&& requestAccessAccount.getRequestAccess().getReasonCode() != null) {
++					requestStr = requestAccessAccount.getRequestAccess().getReasonCode().getName();
++				}
++
++				userName = requestAccessAccount.getRequestedFor() != null
++						? requestAccessAccount.getRequestedFor().getName()
++						: null;
++				userTypeStr = requestAccessAccount.getRequestedFor() != null
++						? requestAccessAccount.getRequestedFor().getUserType()
++						: null;
++
++				response.addAll(validateConfigurationAndReturnUserOrGroupList(assetName, assetType, requestStr,
++						userName, userTypeStr, null, null, null, agentConfigurations, workFlowType));
++			}
++
++		} else if (WorkflowType.UAM_REQUEST_ACCESS_CATALOG.toString().equals(workFlowType)) {
++			System.out.println("Validating " + WorkflowType.UAM_REQUEST_ACCESS_CATALOG);
++			RequestAccessCatalog requestAccessCatalog = getRequestAccessCatalog(requestId, workFlowType);
++			if (requestAccessCatalog != null) {
++				Asset assetObj = requestAccessCatalog.getAsset();
++				if (assetObj != null) {
++					assetName = assetObj.getName();
++					Lookup assetTypeObj = assetObj.getAssetType();
++					if (assetTypeObj != null) {
++						assetType = assetTypeObj.getType() != null ? assetTypeObj.getType() : null;
++					}
++				}
++
++				userName = requestAccessCatalog.getRequestedFor() != null
++						? requestAccessCatalog.getRequestedFor().getName()
++						: null;
++				userTypeStr = requestAccessCatalog.getRequestedFor() != null
++						? requestAccessCatalog.getRequestedFor().getUserType()
++						: null;
++
++				if (requestAccessCatalog.getRequestAccess() != null
++						&& requestAccessCatalog.getRequestAccess().getReasonCode() != null) {
++					requestStr = requestAccessCatalog.getRequestAccess().getReasonCode().getName();
++				}
++
++				BusinessRole businessRoleObj = requestAccessCatalog.getBusinessRole();
++
++				businessRole = businessRoleObj.getName();
++				businessProcess = businessRoleObj.getBusinessProcess() != null
++						? businessRoleObj.getBusinessProcess().getName()
++						: null;
++				subBusinessProcess = businessRoleObj.getBusinessSubProcess() != null
++						? businessRoleObj.getBusinessSubProcess().getName()
++						: null;
++
++				response.addAll(validateConfigurationAndReturnUserOrGroupList(assetName, assetType, requestStr,
++						userName, userTypeStr, businessProcess, subBusinessProcess, businessRole, agentConfigurations,
++						workFlowType));
++
++			}
++		}
++
++		return response;
++	}
++
++	private static RequestAccessAccount getRequestAccessAccount(Integer requestId, String workFlowType) {
++
++		List<RequestAccessAccount> dummyRequestAccessAccounts = getDummyRequestAccessAccount();
++
++		return dummyRequestAccessAccounts
++				.stream().filter(x -> (x != null && Long.valueOf(requestId).equals(x.getId())
++						&& x.getWorkflowType() != null && x.getWorkflowType().toString().equals(workFlowType)))
++				.findAny().orElse(null);
++	}
++
++	private static RequestAccessCatalog getRequestAccessCatalog(Integer requestId, String workFlowType) {
++
++		List<RequestAccessCatalog> dummyRequestAccessCatalogs = getDummyRequestAccessCatalog();
++		return dummyRequestAccessCatalogs
++				.stream().filter(x -> (x != null && Long.valueOf(requestId).equals(x.getId())
++						&& x.getWorkflowType() != null && x.getWorkflowType().toString().equals(workFlowType)))
++				.findAny().orElse(null);
++	}
++
++	private static List<AgentConfiguration> getFilteredAgentConfiguration(Integer configurationId, String stageName) {
++
++		List<AgentConfiguration> dummyAgentConfigurations = getDummyAgentConfiguration();
++		return dummyAgentConfigurations
++				.stream().filter(x -> (x != null && configurationId.equals(x.getConfigurationId())
++						&& x.getStageName() != null && x.getStageName().equals(stageName)))
++				.collect(Collectors.toList());
++	}
++
++	private static List<RequestAccessAccount> getDummyRequestAccessAccount() {
++
++		List<RequestAccessAccount> response = new ArrayList<>();
++		for (int i = 0; i < 3; i++) {
++			RequestAccessAccount requestAccessAccount = new RequestAccessAccount();
++			requestAccessAccount.setId(Long.valueOf(i));
++			Asset asset = new Asset();
++			asset.setName("asset" + i);
++			Lookup lookup = new Lookup();
++			lookup.setType("assetType" + i);
++			asset.setAssetType(lookup);
++			requestAccessAccount.setAsset(asset);
++
++			RequestAccess requestAccess = new RequestAccess();
++			ModuleConfiguration reasonCode = new ModuleConfiguration();
++			reasonCode.setName("requestStr" + i);
++			requestAccess.setReasonCode(reasonCode);
++			requestAccessAccount.setRequestAccess(requestAccess);
++
++			ExtendedUser requestedFor = new ExtendedUser();
++			requestedFor.setName("userStr" + i);
++			requestedFor.setUserType("userTypeStr" + i);
++			requestAccessAccount.setRequestedFor(requestedFor);
++
++			response.add(requestAccessAccount);
++		}
++		return response;
++
++	}
++
++	private static List<RequestAccessCatalog> getDummyRequestAccessCatalog() {
++		List<RequestAccessCatalog> response = new ArrayList<>();
++		for (int i = 1; i < 3; i++) {
++			RequestAccessCatalog requestAccessCatalog = new RequestAccessCatalog();
++			requestAccessCatalog.setId(Long.valueOf(i));
++
++			Asset asset = new Asset();
++			asset.setName("asset" + i);
++			Lookup lookup = new Lookup();
++			lookup.setType("assetType" + i);
++			asset.setAssetType(lookup);
++			requestAccessCatalog.setAsset(asset);
++
++			ExtendedUser requestedFor = new ExtendedUser();
++
++			requestedFor.setName("userStr" + i);
++			requestedFor.setUserType("userTypeStr" + i);
++			requestAccessCatalog.setRequestedFor(requestedFor);
++
++			RequestAccess requestAccess = new RequestAccess();
++			ModuleConfiguration reasonCode = new ModuleConfiguration();
++			reasonCode.setName("requestStr" + i);
++			requestAccess.setReasonCode(reasonCode);
++			requestAccessCatalog.setRequestAccess(requestAccess);
++
++			BusinessRole businessRole = new BusinessRole();
++			businessRole.setName("businessRole" + i);
++			SODBusinessProcess businessProcess = new SODBusinessProcess();
++			businessProcess.setName("businessProcess" + i);
++			businessRole.setBusinessProcess(businessProcess);
++			SODBusinessSubProcess businessSubProcess = new SODBusinessSubProcess();
++			businessSubProcess.setName("subBusinessProcess" + i);
++			businessRole.setBusinessSubProcess(businessSubProcess);
++			requestAccessCatalog.setBusinessRole(businessRole);
++
++			response.add(requestAccessCatalog);
++		}
++		return response;
++	}
++
++	private static List<AgentConfigurationUserOrGroup> validateConfigurationAndReturnUserOrGroupList(String asset,
++			String assetType, String requestStr, String userStr, String userTypeStr, String businessProcess,
++			String subBusinessProcess, String businessRole, List<AgentConfiguration> agentConfigurations,
++			String workFlowType) {
++
++		List<AgentConfigurationUserOrGroup> response = new ArrayList<>();
++		for (AgentConfiguration agentConfiguration : agentConfigurations) {
++
++			boolean matched = true;
++			if (StringUtils.isNotBlank(agentConfiguration.getAsset())
++					&& !agentConfiguration.getAsset().equalsIgnoreCase(asset)) {
++				matched = false;
++			}
++			if (StringUtils.isNotBlank(agentConfiguration.getAssetType())
++					&& !agentConfiguration.getAssetType().equalsIgnoreCase(assetType)) {
++				matched = false;
++			}
++
++			if (StringUtils.isNotBlank(agentConfiguration.getRequestStr())
++					&& !agentConfiguration.getRequestStr().equalsIgnoreCase(requestStr)) {
++				matched = false;
++			}
++
++			if (StringUtils.isNotBlank(agentConfiguration.getUserStr())
++					&& !agentConfiguration.getUserStr().equalsIgnoreCase(userStr)) {
++				matched = false;
++			}
++
++			if (StringUtils.isNotBlank(agentConfiguration.getUserTypeStr())
++					&& !agentConfiguration.getUserTypeStr().equalsIgnoreCase(userTypeStr)) {
++				matched = false;
++			}
++
++			if (WorkflowType.UAM_REQUEST_ACCESS_CATALOG.toString().equals(workFlowType)) {
++				if (StringUtils.isNotBlank(agentConfiguration.getBusinessRole())
++						&& !agentConfiguration.getBusinessRole().equalsIgnoreCase(businessRole)) {
++					matched = false;
++				}
++
++				if (StringUtils.isNotBlank(agentConfiguration.getSubBusinessProcess())
++						&& !agentConfiguration.getSubBusinessProcess().equalsIgnoreCase(subBusinessProcess)) {
++					matched = false;
++				}
++				if (StringUtils.isNotBlank(agentConfiguration.getBusinessProcess())
++						&& !agentConfiguration.getBusinessProcess().equalsIgnoreCase(businessProcess)) {
++					matched = false;
++				}
++			}
++
++			// if (StringUtils.isNotBlank(agentConfiguration.getRequestCriticality())
++			// &&
++			// !agentConfiguration.getRequestCriticality().equalsIgnoreCase(requestCriticality))
++			// {
++			// matched = false;
++			// }
++
++			// if (agentConfiguration.getSodRiskDataCount() != null
++			// && !agentConfiguration.getSodRiskDataCount().equals(sodRiskDataCount)) {
++			// matched = false;
++			// }
++
++			if (matched) {
++				response.addAll(agentConfiguration.getAgentConfigurationUserOrGroups());
++			}
++		}
++
++		return response;
++	}
++}
+Index: regman/src/main/webapp/META-INF/context.xml
+===================================================================
+--- regman/src/main/webapp/META-INF/context.xml	(revision 13007)
++++ regman/src/main/webapp/META-INF/context.xml	(working copy)
+@@ -1,35 +1,44 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <Context>
+-	<JarScanner >
+-		<JarScanFilter defaultTldScan="false" tldScan="jstl-1.2.jar"/>
++	<JarScanner>
++		<JarScanFilter defaultTldScan="false"
++			tldScan="jstl-1.2.jar" />
+ 	</JarScanner>
+-	
+-	<Resource name="jdbc/glpdb" auth="Container" 
++
++	<!-- <Resource name="jdbc/glpdb" auth="Container" factory="com.greenlight.platform.dao.configuration.GltHikariDataSourceFactory" 
++		type="javax.sql.DataSource" minimumIdle="30" maximumPoolSize="100" driverClassName="oracle.jdbc.OracleDriver" 
++		jdbcUrl="jdbc:oracle:thin:@dedusfpora01.henkelgroup.net:1532:AVMEBCP" username="gluser" 
++		password="e71ec532b508f25b1f4de5aea6bfb4e5" /> Un comment below entry if 
++		Resq_DB connection will requires <Resource name="jdbc/glresq" auth="Container" 
++		factory="com.greenlight.platform.dao.configuration.GltHikariDataSourceFactory" 
++		type="javax.sql.DataSource" minimumIdle="15" maximumPoolSize="100" driverClassName="oracle.jdbc.OracleDriver" 
++		jdbcUrl ="jdbc:oracle:thin:@192.168.2.60:1521:XE" username="MSFT" password="9a1465c44a63b8493f8106d9e94c8cc4" 
++		/> <Resource name="mongodb/mongoClient" auth="Container" type="com.mongodb.MongoClient" 
++		closeMethod="close" factory="com.greenlight.platform.dao.configuration.CustomMongoClientJNDIFactory" 
++		singleton="true" connectionString="mongodb://gladmin:3875a08d3a4897358a11b265dc4ada1d@dedussv-gltpoc04:27017,dedussv-gltpoc01:27017,dedussv-gltpoc05:27017/HENKEL_PERFORMANCE?replicaSet=HReplSet;readPreference=secondaryPreferred;authMechanism=SCRAM-SHA-1" 
++		/> <Resource name="mongodb/mongoClientPrimary" auth="Container" type="com.mongodb.MongoClient" 
++		closeMethod="close" factory="com.greenlight.platform.dao.configuration.CustomMongoClientJNDIFactory" 
++		singleton="true" connectionString="mongodb://gladmin:3875a08d3a4897358a11b265dc4ada1d@dedussv-gltpoc04:27017,dedussv-gltpoc01:27017,dedussv-gltpoc05:27017/HENKEL_PERFORMANCE?replicaSet=HReplSet;readPreference=primary;authMechanism=SCRAM-SHA-1" 
++		/> -->
++
++	<Resource name="jdbc/glpdb" auth="Container"
+ 		factory="com.greenlight.platform.dao.configuration.GltHikariDataSourceFactory"
+-		type="javax.sql.DataSource" minimumIdle="30" maximumPoolSize="100"
+-		driverClassName="oracle.jdbc.OracleDriver" jdbcUrl ="jdbc:oracle:thin:@dedusfpora01.henkelgroup.net:1532:AVMEBCP"
+-		username="gluser" password="e71ec532b508f25b1f4de5aea6bfb4e5" />
+-		
+-		<!-- Un comment below entry if Resq_DB connection will requires --> 
+-	<!-- <Resource name="jdbc/glresq" auth="Container" factory="com.greenlight.platform.dao.configuration.GltHikariDataSourceFactory"
+ 		type="javax.sql.DataSource" minimumIdle="15" maximumPoolSize="100"
+-		driverClassName="oracle.jdbc.OracleDriver" jdbcUrl ="jdbc:oracle:thin:@192.168.2.60:1521:XE"
+-		username="MSFT" password="9a1465c44a63b8493f8106d9e94c8cc4" /> -->
++		driverClassName="oracle.jdbc.OracleDriver"
++		jdbcUrl="jdbc:oracle:thin:@192.168.2.18:2020:EBCP" username="ANIKET_P"
++		password="c2ee0a94177897cc95a1260b6d0ad5f2" />
+ 
+ 	<Resource name="mongodb/mongoClient" auth="Container"
+-		type="com.mongodb.MongoClient" 
+-		closeMethod="close"
+-		factory="com.greenlight.platform.dao.configuration.CustomMongoClientJNDIFactory" 
++		type="com.mongodb.MongoClient" closeMethod="close"
++		factory="com.greenlight.platform.dao.configuration.CustomMongoClientJNDIFactory"
+ 		singleton="true"
+-		connectionString="mongodb://gladmin:3875a08d3a4897358a11b265dc4ada1d@dedussv-gltpoc04:27017,dedussv-gltpoc01:27017,dedussv-gltpoc05:27017/HENKEL_PERFORMANCE?replicaSet=HReplSet;readPreference=secondaryPreferred;authMechanism=SCRAM-SHA-1" />
+-
++		connectionString="mongodb://byamulakar:12d96dc9d557124ebde21f7256fcdbf5@192.168.2.206:27017/DEMODB?authMechanism=SCRAM-SHA-1" />
+ 	<Resource name="mongodb/mongoClientPrimary" auth="Container"
+-		type="com.mongodb.MongoClient" 
+-		closeMethod="close"
+-		factory="com.greenlight.platform.dao.configuration.CustomMongoClientJNDIFactory" 
++		type="com.mongodb.MongoClient" closeMethod="close"
++		factory="com.greenlight.platform.dao.configuration.CustomMongoClientJNDIFactory"
+ 		singleton="true"
+-		connectionString="mongodb://gladmin:3875a08d3a4897358a11b265dc4ada1d@dedussv-gltpoc04:27017,dedussv-gltpoc01:27017,dedussv-gltpoc05:27017/HENKEL_PERFORMANCE?replicaSet=HReplSet;readPreference=primary;authMechanism=SCRAM-SHA-1" />
+-		
++		connectionString="mongodb://byamulakar:12d96dc9d557124ebde21f7256fcdbf5@192.168.2.206:27017/DEMODB?authMechanism=SCRAM-SHA-1" />
++
+ 	<Environment name="loggerNode" value="NODE01"
+ 		type="java.lang.String" override="false" />
+ </Context>
+\ No newline at end of file
+Index: regman/src/main/webapp/WEB-INF/web.xml
+===================================================================
+--- regman/src/main/webapp/WEB-INF/web.xml	(revision 13007)
++++ regman/src/main/webapp/WEB-INF/web.xml	(working copy)
+@@ -8,7 +8,7 @@
+ 	</context-param>
+ 	<context-param>
+     	<param-name>com.sap.ui5.resource.DEV_MODE</param-name>
+-    	<param-value>false</param-value>
++    	<param-value>true</param-value>
+   	</context-param>
+   	 <context-param>
+     	<param-name>com.sap.ui5.resource.USE_SERVER_CACHE</param-name>
